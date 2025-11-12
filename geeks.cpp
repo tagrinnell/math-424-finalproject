@@ -98,8 +98,7 @@ public:
                 // if current edge is closer to previous
                 // cheapest edges of set1 and set2
                 if (set1 != set2) {
-                    if (cheapest[set1][2] == -1
-                        || cheapest[set1][2] > w) {
+                    if (cheapest[set1][2] == -1 || cheapest[set1][2] > w) {
                         cheapest[set1] = { u, v, w };
                     }
                     if (cheapest[set2][2] == -1

@@ -11,8 +11,6 @@
 #ifndef GRAPH_HPP
 #define GRAPH_HPP
 
-#include "node.hpp"
-
 #include <vector>
 #include <unordered_map>
 
@@ -20,11 +18,16 @@ class graph {
 public:
     int num_vertices;
     std::unordered_map<int, std::vector<std::tuple<int, int>>> edge_list;
-    std::vector<std::vector<node>> tree;
+    std::vector<int> parents;
+    std::vector<int> ranks;
+
+    graph() : num_vertices(0) {
+        init();
+    }
 
 
-    graph() : num_vertices(0) {}
     graph(int num_vertices) : num_vertices(num_vertices) {
+        init();
     }
 
     void add_edge(int v1, int v2, int weight) {
@@ -34,7 +37,7 @@ public:
 
     /*
     function Find(x) is
-        if x.parent ≠ x then
+        if x.parent != x then
             x.parent := Find(x.parent)
             return x.parent
         else
@@ -42,35 +45,38 @@ public:
             end if
     end function
     */
-    static node* find_set_rep(node* x) {
-        if (x->parent != x) {
-            return x->parent;
+    int find_set_rep(int x) {
+        if (parents[x] == x) {
+            return x;
         }
-        return find_set_rep(x->parent);
+        return find_set_rep(parents[x]);
     }
 
-    void union_set(node* x, node* y) {
-        node* x_rep = find_set_rep(x);
-        node* y_rep = find_set_rep(y);
+    void union_set(int x, int y) {
+        auto x_rep = find_set_rep(x);
+        auto y_rep = find_set_rep(y);
 
         if (x_rep == y_rep) {
             return;
         }
 
-        if (x_rep->rank < y_rep->rank) {
+        if (ranks[x_rep] < ranks[y_rep]) {
             auto tmp = y_rep;
             x_rep = y_rep;
             y_rep = tmp;
         }
 
-        y_rep->parent = x_rep;
-        if (x_rep->rank == y_rep->rank) {
-            x_rep->rank++;
+        parents[y_rep] = x_rep;
+        if (ranks[x_rep] == ranks[y_rep]) {
+            ranks[x_rep]++;
         }
     }
 
-    void combine_edge_lists(std::vector<std::tuple<int, int>> el_x, std::vector<std::tuple<int, int>> el_y) {
-
+    void init(){
+        for (int i = 0; i < num_vertices; i++) {
+            parents[i] = i;
+            ranks[i] = 0;
+        }
     }
 
 };
