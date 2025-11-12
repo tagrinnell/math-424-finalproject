@@ -13,6 +13,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <iostream>
 
 class graph {
 public:
@@ -26,7 +27,7 @@ public:
     }
 
 
-    graph(int num_vertices) : num_vertices(num_vertices) {
+    graph(int num_vertices) : num_vertices(num_vertices), parents(num_vertices, -1), ranks(num_vertices) {
         init();
     }
 
@@ -61,7 +62,7 @@ public:
         }
 
         if (ranks[x_rep] < ranks[y_rep]) {
-            auto tmp = y_rep;
+            auto tmp = x_rep;
             x_rep = y_rep;
             y_rep = tmp;
         }
@@ -73,9 +74,22 @@ public:
     }
 
     void init(){
+        // parents(num_vertices);
+        // ranks(num_vertices);
         for (int i = 0; i < num_vertices; i++) {
             parents[i] = i;
             ranks[i] = 0;
+        }
+    }
+
+    void to_string() {
+        std::cout << "Graph to string: " << std::endl;
+        for (int i = 0; i < num_vertices; i++) {
+            auto curr_edge_list = edge_list[i];
+            for (int j = 0; j < curr_edge_list.size(); j++) {
+                auto curr_edge = curr_edge_list[j];
+                std::cout << "\t(" << i << ", " << std::get<0>(curr_edge) << "), weight = " << std::get<1>(curr_edge) << std::endl;
+            }
         }
     }
 

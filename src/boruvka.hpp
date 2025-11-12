@@ -4,6 +4,7 @@
 
 #include "graph.hpp"
 
+#include <iostream>
 #include <cmath>
 
 // Pseudocode from Wikipedia
@@ -48,31 +49,53 @@ graph boruvka_mst(graph* input_graph) {
     graph output_graph(input_graph->num_vertices);
 
     bool completed = false;
+    std::unordered_map<int, std::tuple<int, int, int>> cheapest_node;
     while (!completed) {
-        std::unordered_map<int, std::tuple<int, int, int>> cheapest_node;
+        cheapest_node.clear();
 
         // Find the cheapest edge for
         for (int i = 0; i < input_graph->edge_list.size(); i++) {
             auto curr_node_edge_list = input_graph->edge_list[i];
             auto x_rep = output_graph.find_set_rep(i);
             for (int j = 0; j < curr_node_edge_list.size(); j++) {
-                auto y = std::get<0>(curr_node_edge_list[i]);
+                auto y = std::get<0>(curr_node_edge_list[j]);
                 auto y_rep = output_graph.find_set_rep(y);
 
-                // x
+                // x and y belong to the same set
                 if (x_rep == y_rep) {
                     continue;
-                } else {
-                    if (cheapest_node.find(x_rep) == cheapest_node.end() ||
-                            std::get<2>(cheapest_node[i]) > std::get<1>(curr_node_edge_list[i])) {
-                        cheapest_node[i] = std::make_tuple(i, y, std::get<1>(curr_node_edge_list[i]));
+                } else {            // x_rep and y_rep
+                    if ((cheapest_node.find(x_rep) == cheapest_node.end() ||                                 // The cheapest node hasn't been found yet
+                            // cheapest node has a 3-tuple //node_edge list is a map of 2-tuples
+                            std::get<2>(cheapest_node[x_rep]) > std::get<1>(curr_node_edge_list[j]))         // Current node has a smaller weight than the current cheapest edge
+                        ) {
+                        cheapest_node[i] = std::make_tuple(i, y, std::get<1>(curr_node_edge_list[j]));
                     }
 
                 }
-
             }
+
         }
 
+        auto num_cheapest_found = 0;
+        for (int i = 0; i < output_graph.num_vertices; i++) {
+            // We have a cheapest node.  Add to output_graph
+            // increment count of found cheapest edges.
+            if (cheapest_node.find(i) != cheapest_node.end() &&
+                (output_graph.edge_list.find(i) == output_graph.edge_list.end())            //    std::get<1>(output_graph.edge_list.find(i))
+                ) {
+                auto v = std::get<1>(cheapest_node[i]);
+                auto w = std::get<2>(cheapest_node[i]);
+
+                std::cout << "Adding edge from " << i << " to " << v << " weighing " << w << std::endl;
+                output_graph.add_edge(i, std::get<1>(cheapest_node[i]), std::get<2>(cheapest_node[i]));
+                output_graph.union_set(i, v);
+                num_cheapest_found++;
+            }
+        }
+        if (num_cheapest_found == 0) {
+            completed = true;
+        }
     }
 
     return output_graph;
