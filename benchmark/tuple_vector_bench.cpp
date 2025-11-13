@@ -4,36 +4,37 @@
 #include <cmath>
 #include <chrono>
 
-#define NUM_ITERATIONS 1000000
+#define NUM_ITERATIONS 100
 
-double vector_benchmark() {
+long double vector_benchmark() {
 
-    float total_sum = 0.0;
+    long double total_sum = 0.0;
     for (int i = 0; i < NUM_ITERATIONS; i++) {
 
-        auto t1 = std::chrono::system_clock::now();
+        auto t1 = std::chrono::high_resolution_clock::now();
 
         std::vector<int> x = {0, 1, 2};
         int y = x[1];
 
-        auto t2 = std::chrono::system_clock::now();
-        total_sum += (t2 - t1).count();
+        auto t2 = std::chrono::high_resolution_clock::now();
+        auto d = std::chrono::duration<double, std::milli>(t2 - t1);
+        std::cout << d << std::endl;
     }
 
     return total_sum / (1.0 * NUM_ITERATIONS);
 }
 
-double tuple_benchmark() {
+long double tuple_benchmark() {
 
-    float total_sum = 0.0;
+    long double total_sum = 0.0;
     for (int i = 0; i < NUM_ITERATIONS; i++) {
 
-        auto t1 = std::chrono::system_clock::now();
+        auto t1 = std::chrono::high_resolution_clock::now();
 
         std::tuple<int, int, int> x = std::make_tuple(0, 1, 2);
         int y = std::get<1>(x);
 
-        auto t2 = std::chrono::system_clock::now();
+        auto t2 = std::chrono::high_resolution_clock::now();
         total_sum += (t2 - t1).count();
     }
 
