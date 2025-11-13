@@ -1,10 +1,10 @@
 CC = g++
-FFLAGS = -Wall -std=c99
+FFLAGS = -Wall -FOPEN_MP
 LFLAGS = -lgomp -lm
-OBJECTS = include/graph.o
+OBJECTS = main.o
 ROOT_DIR=$(pwd)
 
-*.o: *.c
+%.o: %.c
 	echo $ROOT_DIR
 	$(CC) $(FFLAGS) -c $<
 

@@ -32,8 +32,12 @@ public:
     }
 
     void add_edge(int v1, int v2, int weight) {
-        edge_list[v1].push_back(std::make_tuple(v2, weight));
-        edge_list[v2].push_back(std::make_tuple(v1, weight));
+        if (!edge_already_exists(v1, v2, weight)) {
+            edge_list[v1].push_back(std::make_tuple(v2, weight));
+        }
+        if (!edge_already_exists(v2, v1, weight)) {
+            edge_list[v2].push_back(std::make_tuple(v1, weight));
+        }
     }
 
     /*
@@ -93,6 +97,19 @@ public:
         }
     }
 
+    bool edge_already_exists(int u, int v, int w) {
+        if (edge_list.find(u) == edge_list.end()) {
+            return false;
+        }
+
+        for (int i = 0; i < edge_list[u].size(); i++) {
+            if (std::get<0>(edge_list[u][i]) == v && std::get<1>(edge_list[u][i]) == w) {
+                return true;
+            }
+        }
+
+       return false;
+    }
 };
 
 #endif
