@@ -1,15 +1,24 @@
 CC = g++
-FFLAGS = -Wall -FOPEN_MP
+FFLAGS = -Wall -fopenmp
 LFLAGS = -lgomp -lm
-OBJECTS = main.o
-ROOT_DIR=$(pwd)
-
-%.o: %.c
-	echo $ROOT_DIR
-	$(CC) $(FFLAGS) -c $<
+OBJECTS =  main.o
+# OBJECTS =  boruvka.o main.o
+# ROOT_DIR=$(pwd)
 
 main.exe: $(OBJECTS)
-	$(CC) $(LFLAGS) $(OBJECTS) -o main.exe
+	$(CC) $(LFLAGS) $(OBJECTS) $(FFLAGS) -o main.exe
+
+main.o:
+# 	g++ -Wall -fopenmp main.cpp -o main.o -c
+	g++ -fopenmp main.cpp -o main.o -c
+
+boruvka.o:
+# 	g++ -Wall -fopenmp boruvka.cpp -o boruvka.o -c
+	g++ -fopenmp boruvka.cpp -o boruvka.o -c
+
+
+# %.o: %.c
+# 	$(CC) $(FFLAGS) -c $<
 
 clean:
-	rm -f $(OBJECTS) *.exe
+	rm -f $(OBJECTS) *.exe *.o

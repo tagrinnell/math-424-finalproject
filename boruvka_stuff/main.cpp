@@ -5,8 +5,14 @@
 #include <chrono>
 #include <iostream>
 
+#ifdef _OPENMP
+    #include <omp.h>
+#endif
+
 void gfg_test();
 void new_test();
+graph boruvka_mst(graph* input_graph);
+graph boruvka_mst_openmp(graph* input_graph, int num_threads);
 
 int main() {
     // gfg_test();
@@ -52,18 +58,25 @@ void new_test() {
 
     // g.add_edge(0, 1, 2);
 
-    const auto t1 = std::chrono::system_clock::now();
+    const auto t1 = std::chrono::high_resolution_clock::now();
 
     auto output = boruvka_mst(&g);
-    const auto t2 = std::chrono::system_clock::now();
-    const std::chrono::duration<double, std::milli> ms = t2 - t1;
-    std::cout << "Serial Implementation ran for " << ms.count() << std::endl;
+    const auto t2 = std::chrono::high_resolution_clock::now();
+    // const std::chrono::duration<double, std::milli> ms = t2 - t1;
+    // std::cout << "Serial Implementation ran for " << ms.count() << std::endl;
 
     output.to_string();
 
+    #ifdef _OPENMP
+        std::cout << "OpenMP flag set" << std::endl;
+        auto num_threads = 4;
+        std::cout << "\n\nStarting OpenMP run with " << num_threads << " threads" << std::endl;
 
-    // output = boruvka_mst_openmp(&g, 4);
-    // output.to_string();
+        auto t3 = std::chrono::high_resolution_clock::now();
+        output = boruvka_mst_openmp(&g, num_threads);
+        auto t4 = std::chrono::high_resolution_clock::now();
 
-    // auto t3 = std::chrono::system_clock::now();
+        output.to_string();
+    #endif
 }
+

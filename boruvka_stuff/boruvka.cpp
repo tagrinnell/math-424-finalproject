@@ -1,13 +1,5 @@
-#ifndef BORUVKA_HPP
-#define BORUVKA_HPP
-
+// #include "boruvka.hpp"
 #include "graph.hpp"
-
-#include <iostream>
-#include <cmath>
-#ifdef _OPENMP
-    #include <omp.h>
-#endif
 
 // Pseudocode from Wikipedia
 /*
@@ -46,47 +38,16 @@ function tie-breaking-rule(edge1, edge2) is
     is preferred over edge2 in the case of a tie.
 
 */
-graph boruvka_mst_new(graph* input_graph) {
-    graph output_graph(input_graph->num_vertices);
-
-    std::unordered_map<int, std::vector<int>> component_list;
-    std::unordered_map<int, std::tuple<int, int, int>> cheapest_node;
-
-    bool completed = false;
-    while (!completed) {
-        // Find all of the components
-
-
-        cheapest_node.clear();
-
-        component_list.clear();
-    }
-
-    return output_graph;
-}
-
-
-graph boruvka_mst_old(graph* input_graph) {
+graph boruvka_mst(graph* input_graph) {
     // Construct output graph with N components where N is the number of vertices in the input graph.
     graph output_graph(input_graph->num_vertices);
 
     bool completed = false;
     std::unordered_map<int, std::tuple<int, int, int>> cheapest_node;
-
-    // Initialize component list to contain each of the vertices
-    std::vector<std::vector<int>> component_list;
-    for (int i = 0; i < input_graph->num_vertices; i++) {
-        component_list.push_back({i});
-    }
     while (!completed) {
         std::cout << "New iteration" << std::endl;
         cheapest_node.clear();
 
-        // For each component
-        for (int i = 0; i < component_list.size(); i++) {
-            auto cur
-
-        }
         // Find the cheapest edge for
         for (int i = 0; i < input_graph->edge_list.size(); i++) {
             auto curr_node_edge_list = input_graph->edge_list[i];
@@ -138,4 +99,71 @@ graph boruvka_mst_old(graph* input_graph) {
     return output_graph;
 }
 
-#endif
+graph boruvka_mst_openmp(graph* input_graph, int num_threads) {
+    #ifdef _OPENMP
+        std::cout << "OpenMP Flag set" << std::endl;
+    #endif
+    // Construct output graph with N components where N is the number of vertices in the input graph.
+    graph output_graph(input_graph->num_vertices);
+
+    bool completed = false;
+    std::unordered_map<int, std::tuple<int, int, int>> cheapest_node;
+    while (!completed) {
+        std::cout << "New iteration" << std::endl;
+        cheapest_node.clear();
+
+        // Find the cheapest edge for each component
+        #pragma omp parallel for num_threads(num_threads)
+        for (int i = 0; i < input_graph->edge_list.size(); i++) {
+            auto curr_node_edge_list = input_graph->edge_list[i];
+            auto x_rep = output_graph.find_set_rep(i);
+            for (int j = 0; j < curr_node_edge_list.size(); j++) {
+                auto y = std::get<0>(curr_node_edge_list[j]);
+                auto y_rep = output_graph.find_set_rep(y);
+
+                // x and y belong to the same set
+                if (x_rep == y_rep) {
+                    continue;
+                } else {            // x_rep and y_rep
+                    if ((cheapest_node.find(x_rep) == cheapest_node.end()) ||                                  // The cheapest node hasn't been found yet
+                    // cheapest node has a 3-tuple //node_edge list is a map of 2-tuples
+                    (std::get<2>(cheapest_node[x_rep]) > std::get<1>(curr_node_edge_list[j]))         // Current node has a smaller weight than the current cheapest edge
+                    ) {
+                        cheapest_node[x_rep] = std::make_tuple(i, y, std::get<1>(curr_node_edge_list[j]));
+                    }
+
+                }
+            }
+
+        }
+
+
+        auto num_cheapest_found = 0;
+        #pragma omp parallel for num_threads(num_threads)
+        for (int i = 0; i < output_graph.num_vertices; i++) {
+            // We have a cheapest node.  Add to output_graph
+            // increment count of found cheapest edges.
+            if (cheapest_node.find(i) != cheapest_node.end()) {
+                auto u = std::get<0>(cheapest_node[i]);
+                auto v = std::get<1>(cheapest_node[i]);
+                auto w = std::get<2>(cheapest_node[i]);
+
+                if (!output_graph.edge_already_exists(u, v, w)) {
+                    std::cout << "\tAdding edge from " << u << " to " << v << " weighing " << w << std::endl;
+                    output_graph.add_edge(u, v, w);
+                    output_graph.union_set(i, v);   // Join vertex v to i (representative of this tree)
+                    #pragma omp critical
+                    num_cheapest_found++;
+                }
+            }
+        }
+        if (num_cheapest_found == 0) {
+            completed = true;
+        }
+
+    }
+
+    return output_graph;
+}
+
+// #endif
