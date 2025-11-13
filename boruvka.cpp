@@ -1,5 +1,5 @@
 // #include "boruvka.hpp"
-#include "graph.hpp"
+#include "boruvka_stuff/graph.hpp"
 
 // Pseudocode from Wikipedia
 /*

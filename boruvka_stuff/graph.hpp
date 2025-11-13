@@ -35,6 +35,10 @@ public:
         edge_list.push_back(std::make_tuple(v1, v2, weight));
     }
 
+    void add_edge(std::tuple<int, int, int> edge) {
+        edge_list.push_back(edge);
+    }
+
     /*
     function Find(x) is
         if x.parent != x then
@@ -83,7 +87,7 @@ public:
         std::cout << "Graph to string: " << std::endl;
         for (int i = 0; i < edge_list.size(); i++) {
             auto curr_tuple = edge_list[i];
-            std::cout << "\t(" << std::get<0>(curr_tuple) << ", " << std::get<1>(curr_tuple) << "), weight = " << std::get<2>(curr_edge) << std::endl;
+            std::cout << "\t(" << std::get<0>(curr_tuple) << ", " << std::get<1>(curr_tuple) << "), weight = " << std::get<2>(curr_tuple) << std::endl;
         }
     }
 

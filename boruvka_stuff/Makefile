@@ -10,12 +10,14 @@ main.exe: $(OBJECTS)
 
 main.o:
 # 	g++ -Wall -fopenmp main.cpp -o main.o -c
-	g++ -fopenmp main.cpp -o main.o -c
+	g++ main.cpp -o main.o -c
 
 boruvka.o:
 # 	g++ -Wall -fopenmp boruvka.cpp -o boruvka.o -c
 	g++ -fopenmp boruvka.cpp -o boruvka.o -c
 
+normal:
+	g++ -I ./ main.cpp -o main.exe -lm
 
 # %.o: %.c
 # 	$(CC) $(FFLAGS) -c $<
