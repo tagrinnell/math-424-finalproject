@@ -1,15 +1,19 @@
 CC = g++
-FFLAGS = -Wall -FOPEN_MP
+FFLAGS = -Wall -fopenmp
 LFLAGS = -lgomp -lm
 OBJECTS = main.o
 ROOT_DIR=$(pwd)
 
 %.o: %.c
-	echo $ROOT_DIR
-	$(CC) $(FFLAGS) -c $<
+# 	echo $ROOT_DIR
+	$(CC) -c -fopenmp $<
+
+manual:
+	g++ -fopenmp main.cpp -o main.o -c $<
+	g++ -fopenmp -lgomp -lm main.o -o main.exe
 
 main.exe: $(OBJECTS)
 	$(CC) $(LFLAGS) $(OBJECTS) -o main.exe
 
 clean:
-	rm -f $(OBJECTS) *.exe
+	rm -f $(OBJECTS) *.exe *.o
