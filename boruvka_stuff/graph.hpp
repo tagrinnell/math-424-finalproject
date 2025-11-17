@@ -18,7 +18,7 @@
 class graph {
 public:
     int num_vertices;
-    std::unordered_map<int, std::vector<std::tuple<int, int>>> edge_list;
+    std::vector<std::tuple<int, int, int>> edge_list;
     std::vector<int> parents;
     std::vector<int> ranks;
 
@@ -32,12 +32,11 @@ public:
     }
 
     void add_edge(int v1, int v2, int weight) {
-        if (!edge_already_exists(v1, v2, weight)) {
-            edge_list[v1].push_back(std::make_tuple(v2, weight));
-        }
-        if (!edge_already_exists(v2, v1, weight)) {
-            edge_list[v2].push_back(std::make_tuple(v1, weight));
-        }
+        edge_list.push_back(std::make_tuple(v1, v2, weight));
+    }
+
+    void add_edge(std::tuple<int, int, int> edge) {
+        edge_list.push_back(edge);
     }
 
     /*
@@ -78,8 +77,6 @@ public:
     }
 
     void init(){
-        // parents(num_vertices);
-        // ranks(num_vertices);
         for (int i = 0; i < num_vertices; i++) {
             parents[i] = i;
             ranks[i] = 0;
@@ -88,28 +85,25 @@ public:
 
     void to_string() {
         std::cout << "Graph to string: " << std::endl;
-        for (int i = 0; i < num_vertices; i++) {
-            auto curr_edge_list = edge_list[i];
-            for (int j = 0; j < curr_edge_list.size(); j++) {
-                auto curr_edge = curr_edge_list[j];
-                std::cout << "\t(" << i << ", " << std::get<0>(curr_edge) << "), weight = " << std::get<1>(curr_edge) << std::endl;
-            }
+        for (int i = 0; i < edge_list.size(); i++) {
+            auto curr_tuple = edge_list[i];
+            std::cout << "\t(" << std::get<0>(curr_tuple) << ", " << std::get<1>(curr_tuple) << "), weight = " << std::get<2>(curr_tuple) << std::endl;
         }
     }
 
-    bool edge_already_exists(int u, int v, int w) {
-        if (edge_list.find(u) == edge_list.end()) {
-            return false;
-        }
+    // bool edge_already_exists(int u, int v, int w) {
+    //     if (edge_list.find(u) == edge_list.end()) {
+    //         return false;
+    //     }
 
-        for (int i = 0; i < edge_list[u].size(); i++) {
-            if (std::get<0>(edge_list[u][i]) == v && std::get<1>(edge_list[u][i]) == w) {
-                return true;
-            }
-        }
+    //     for (int i = 0; i < edge_list[u].size(); i++) {
+    //         if (std::get<0>(edge_list[u][i]) == v && std::get<1>(edge_list[u][i]) == w) {
+    //             return true;
+    //         }
+    //     }
 
-       return false;
-    }
+    //    return false;
+    // }
 };
 
 #endif

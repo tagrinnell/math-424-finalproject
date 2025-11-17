@@ -13,7 +13,7 @@ manual:
 	g++ -fopenmp -lgomp -lm main.o -o main.exe
 
 main.exe: $(OBJECTS)
-	$(CC) $(LFLAGS) $(OBJECTS) -o main.exe
+	$(CC) $(LFLAGS) $(OBJECTS) $(FFLAGS) -o main.exe
 
 clean:
 	rm -f $(OBJECTS) *.exe *.o

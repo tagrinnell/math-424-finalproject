@@ -8,8 +8,14 @@
     #include <omp.h>
 #endif
 
+#ifdef _OPENMP
+    #include <omp.h>
+    graph boruvka_mst_openmp(graph input_graph, int num_threads);
+#endif
+
 void gfg_test();
 void new_test();
+graph boruvka_mst(graph input_graph);
 
 int main() {
     // gfg_test();
@@ -28,7 +34,7 @@ void gfg_test() {
     g.add_edge(2, 3, 4);
     // g.add_edge(0, 1, 2);
 
-    auto output = boruvka_mst(&g);
+    auto output = boruvka_mst(g);
     g.to_string();
     output.to_string();
 
@@ -55,7 +61,7 @@ void new_test() {
 
     // g.add_edge(0, 1, 2);
 
-    const auto t1 = std::chrono::system_clock::now();
+    const auto t1 = std::chrono::high_resolution_clock::now();
 
     auto output = boruvka_mst(&g);
     const auto t2 = std::chrono::system_clock::now();
@@ -63,8 +69,6 @@ void new_test() {
     std::cout << "Serial Implementation ran for " << ms.count() << std::endl;
 
     output.to_string();
-
-
     #ifdef _OPENMP
         std::cout << "\n\nOpenMP Trial" << std::endl;
         auto t3 = std::chrono::system_clock::now();
