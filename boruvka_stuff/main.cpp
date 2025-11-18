@@ -63,14 +63,14 @@ void new_test() {
     std::cout << "Serial Implementation ran for " << ms.count() << std::endl;
 
     output.to_string();
-    // #ifdef _OPENMP
-    //     std::cout << "\n\nOpenMP Trial" << std::endl;
-    //     auto t3 = std::chrono::system_clock::now();
-    //     output = boruvka_mst_openmp(g, 16);
-    //     auto t4 = std::chrono::system_clock::now();
-    //     ms = t4 - t3;
-    //     output.to_string();
-    //     std::cout << "OpenMP Implementation ran for " << ms.count() << std::endl;
-    // #endif
+    #ifdef _OPENMP
+        std::cout << "\n\nOpenMP Trial" << std::endl;
+        auto t3 = std::chrono::system_clock::now();
+        output = boruvka_mst_openmp(g, 16);
+        auto t4 = std::chrono::system_clock::now();
+        ms = t4 - t3;
+        output.to_string();
+        std::cout << "OpenMP Implementation ran for " << ms.count() << std::endl;
+    #endif
 
 }

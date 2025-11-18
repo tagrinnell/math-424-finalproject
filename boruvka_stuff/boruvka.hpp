@@ -60,15 +60,15 @@ graph boruvka_mst(graph input_graph) {
     while (!completed) {
         std::cout << "New Iteration" << std::endl;
         // Find all of the components
-        for (int i = 0; i < output_graph.num_vertices; i++) {
-            auto x = output_graph.find_set_rep(i);
-            // This component hasn't been found yet, create a new component in the map
-            if (component_list.find(x) == component_list.end()) {
-                component_list[x] = {i};
-            } else {
-                component_list[x].push_back(i); // Add to the component list
-            }
-        }
+        // for (int i = 0; i < output_graph.num_vertices; i++) {
+        //     auto x = output_graph.find_set_rep(i);
+        //     // This component hasn't been found yet, create a new component in the map
+        //     if (component_list.find(x) == component_list.end()) {
+        //         component_list[x] = {i};
+        //     } else {
+        //         component_list[x].push_back(i); // Add to the component list
+        //     }
+        // }
 
         // Initialize the cheapest edge for each component to None
         cheapest_node.clear();
@@ -77,68 +77,62 @@ graph boruvka_mst(graph input_graph) {
             // std::cout << "\tCurrent input list size " << input_edge_list.size() << std::endl;
 
             auto curr_edge = input_edge_list[i];
-            if (!std::get<3>(curr_edge)) {
-                print_tuple(curr_edge);
-                auto u = std::get<0>(curr_edge);
-                auto v = std::get<1>(curr_edge);
-                auto w = std::get<2>(curr_edge);
+            auto u = std::get<0>(curr_edge);
+            auto v = std::get<1>(curr_edge);
+            auto w = std::get<2>(curr_edge);
 
-                auto u_rep = output_graph.find_set_rep(u);
-                auto v_rep = output_graph.find_set_rep(v);
+            auto u_rep = output_graph.find_set_rep(u);
+            auto v_rep = output_graph.find_set_rep(v);
 
-                // u and v belong to different components
-                if (u_rep != v_rep) {
+            // u and v belong to different components
+            if (u_rep != v_rep) {
 
-                    // u's component doesn't currently have a cheapest node or
-                    // the weight of the current edge is smaller than the current smallest edge weight
-                    if (cheapest_node.find(u_rep) == cheapest_node.end() ||
-                          w < std::get<2>(cheapest_node[u_rep]) ||
-                          tie_breaking_rule(input_edge_list[i], cheapest_node[u_rep])) {
-                        if (cheapest_node.find(u_rep) != cheapest_node.end()) {
-                            std::get<3>(cheapest_node[u_rep]) = false;
-                        }
-                        cheapest_node[u_rep] = input_edge_list[i];
-                        // std::get<3>(input_edge_list[i]) = true;
+                // u's component doesn't currently have a cheapest node or
+                // the weight of the current edge is smaller than the current smallest edge weight
+                if (cheapest_node.find(u_rep) == cheapest_node.end() ||
+                        w < std::get<2>(cheapest_node[u_rep]) ||
+                        tie_breaking_rule(input_edge_list[i], cheapest_node[u_rep])) {
+                    if (cheapest_node.find(u_rep) != cheapest_node.end()) {
+                        std::get<3>(cheapest_node[u_rep]) = false;
                     }
-
-                    if (cheapest_node.find(v_rep) == cheapest_node.end() ||
-                          w < std::get<2>(cheapest_node[v_rep]) ||
-                          tie_breaking_rule(input_edge_list[i], cheapest_node[v_rep])) {
-                        if (cheapest_node.find(v_rep) != cheapest_node.end()) {
-                            std::get<3>(cheapest_node[v_rep]) = false;
-                        }
-                        cheapest_node[v_rep] = input_edge_list[i];
-                        // std::get<3>(input_edge_list[i]) = true;
-                    }
-
+                    cheapest_node[u_rep] = input_edge_list[i];
+                    // std::get<3>(input_edge_list[i]) = true;
                 }
-            //     else {
-            //         // As an optimization, one could remove from G each edge that is found to connect two
-            //         // vertices in the same component, so that it does not contribute to the time for searching
-            //         // for cheapest edges in later components.
 
-            //         std::cout << "Removing edge (connects within a single component): ";
-            //         print_tuple(curr_edge);
-            //         input_edge_list.erase(input_edge_list.begin() + i);
-            //         i--;
-            //    }
+                if (cheapest_node.find(v_rep) == cheapest_node.end() ||
+                        w < std::get<2>(cheapest_node[v_rep]) ||
+                        tie_breaking_rule(input_edge_list[i], cheapest_node[v_rep])) {
+                    if (cheapest_node.find(v_rep) != cheapest_node.end()) {
+                        std::get<3>(cheapest_node[v_rep]) = false;
+                    }
+                    cheapest_node[v_rep] = input_edge_list[i];
+                    // std::get<3>(input_edge_list[i]) = true;
+                }
+
             }
+        //     else {
+        //         // As an optimization, one could remove from G each edge that is found to connect two
+        //         // vertices in the same component, so that it does not contribute to the time for searching
+        //         // for cheapest edges in later components.
 
+        //         std::cout << "Removing edge (connects within a single component): ";
+        //         print_tuple(curr_edge);
+        //         input_edge_list.erase(input_edge_list.begin() + i);
+        //         i--;
+        //    }
         }
 
         if (cheapest_node.size() != 0) {
             for (auto& x : cheapest_node) {
                 std::cout << "  Adding edge from " << std::get<0>(x.second) << " to " << std::get<1>(x.second) << " with weight " << std::get<2>(x.second) << std::endl;
-                std::get<3>(x.second) = true;
                 output_graph.add_edge(x.second);
                 output_graph.union_set(std::get<0>(x.second), std::get<1>(x.second));
-                // input_edge_list.erase(std::find(input_edge_list.begin(), input_edge_list.end(), x.second));
             }
         } else {
             completed = true;
         }
 
-        component_list.clear();
+        // component_list.clear();
     }
 
     return output_graph;
@@ -159,74 +153,59 @@ inline void print_tuple(std::tuple<int, int, int, bool> edge) {
 graph boruvka_mst_openmp(graph input_graph, int num_threads) {
     graph output_graph(input_graph.num_vertices);
 
-    std::unordered_map<int, std::vector<int>> component_list;
     std::unordered_map<int, std::tuple<int, int, int, bool>> cheapest_node;
     auto input_edge_list = input_graph.edge_list;
 
     bool completed = false;
     while (!completed) {
         std::cout << "New Iteration" << std::endl;
-        // Find all of the components
-        #pragma omp parallel for num_threads(num_threads)
-        for (int i = 0; i < output_graph.num_vertices; i++) {
-            auto x = output_graph.find_set_rep(i);
-            // This component hasn't been found yet, create a new component in the map
-            if (component_list.find(x) == component_list.end()) {
-                component_list[x] = {i};
-            } else {
-                component_list[x].push_back(i); // Add to the component list
-            }
-        }
-
         // Initialize the cheapest edge for each component to None
         cheapest_node.clear();
 
         #pragma omp parallel for num_threads(num_threads)
         for (int i = 0; i < input_edge_list.size(); i++) {
-            // std::cout << "\tCurrent input list size " << input_edge_list.size() << std::endl;
 
             auto curr_edge = input_edge_list[i];
-            if (!std::get<3>(curr_edge)) {
-                auto u = std::get<0>(curr_edge);
-                auto v = std::get<1>(curr_edge);
-                auto w = std::get<2>(curr_edge);
+            auto u = std::get<0>(curr_edge);
+            auto v = std::get<1>(curr_edge);
+            auto w = std::get<2>(curr_edge);
 
-                auto u_rep = output_graph.find_set_rep(u);
-                auto v_rep = output_graph.find_set_rep(v);
+            auto u_rep = output_graph.find_set_rep(u);
+            auto v_rep = output_graph.find_set_rep(v);
 
-                // u and v belong to different components
-                if (u_rep != v_rep) {
+            // u and v belong to different components
+            if (u_rep != v_rep) {
 
-                    // u's component doesn't currently have a cheapest node or
-                    // the weight of the current edge is smaller than the current smallest edge weight
-                    #pragma omp critical
-                    {
-                        if (cheapest_node.find(u_rep) == cheapest_node.end() ||
-                            w < std::get<2>(cheapest_node[u_rep]) ||
-                            tie_breaking_rule(input_edge_list[i], cheapest_node[u_rep])) {
-                            if (cheapest_node.find(u_rep) != cheapest_node.end()) {
-                                std::get<3>(cheapest_node[u_rep]) = false;
-                            }
-                            cheapest_node[u_rep] = input_edge_list[i];
-                            std::get<3>(input_edge_list[i]) = true;
+                // u's component doesn't currently have a cheapest node or
+                // the weight of the current edge is smaller than the current smallest edge weight
+                #pragma omp critical
+                {
+                    if (cheapest_node.find(u_rep) == cheapest_node.end() ||
+                        w < std::get<2>(cheapest_node[u_rep]) ||
+                        tie_breaking_rule(input_edge_list[i], cheapest_node[u_rep])) {
+                        if (cheapest_node.find(u_rep) != cheapest_node.end()) {
+                            std::get<3>(cheapest_node[u_rep]) = false;
                         }
+                        cheapest_node[u_rep] = input_edge_list[i];
+                        // std::get<3>(input_edge_list[i]) = true;
                     }
-
-                    #pragma omp critical
-                    {
-                        if (cheapest_node.find(v_rep) == cheapest_node.end() ||
-                            w < std::get<2>(cheapest_node[v_rep]) ||
-                            tie_breaking_rule(input_edge_list[i], cheapest_node[v_rep])) {
-                            if (cheapest_node.find(v_rep) != cheapest_node.end()) {
-                                std::get<3>(cheapest_node[v_rep]) = false;
-                            }
-                            cheapest_node[v_rep] = input_edge_list[i];
-                            std::get<3>(input_edge_list[i]) = true;
-                        }
-                    }
-
-
                 }
+
+                #pragma omp critical
+                {
+                    if (cheapest_node.find(v_rep) == cheapest_node.end() ||
+                        w < std::get<2>(cheapest_node[v_rep]) ||
+                        tie_breaking_rule(input_edge_list[i], cheapest_node[v_rep])) {
+                        if (cheapest_node.find(v_rep) != cheapest_node.end()) {
+                            std::get<3>(cheapest_node[v_rep]) = false;
+                        }
+                        cheapest_node[v_rep] = input_edge_list[i];
+                        // std::get<3>(input_edge_list[i]) = true;
+                    }
+                }
+
+
+            }
             //     else {
             //         // As an optimization, one could remove from G each edge that is found to connect two
             //         // vertices in the same component, so that it does not contribute to the time for searching
@@ -236,7 +215,7 @@ graph boruvka_mst_openmp(graph input_graph, int num_threads) {
             //         input_edge_list.erase(input_edge_list.begin() + i);
             //         i--;
             //    }
-            }
+            // }
 
         }
 
@@ -253,99 +232,9 @@ graph boruvka_mst_openmp(graph input_graph, int num_threads) {
             completed = true;
         }
 
-        component_list.clear();
     }
 
     return output_graph;
 }
-
-
-
-//     graph output_graph(input_graph.num_vertices);
-
-//     std::unordered_map<int, std::vector<int>> component_list;
-//     std::unordered_map<int, std::tuple<int, int, int, int>> cheapest_node;
-//     auto input_edge_list = input_graph.edge_list;
-
-//     bool completed = false;
-//     while (!completed) {
-//         std::cout << "New Iteration" << std::endl;
-//         // Find all of the components
-//         for (int i = 0; i < output_graph.num_vertices; i++) {
-//             auto x = output_graph.find_set_rep(i);
-//             // This component hasn't been found yet, create a new component in the map
-//             #pragma omp critical
-//             {
-//                 if (component_list.find(x) == component_list.end()) {
-//                     component_list[x] = {i};
-//                 } else {
-//                     component_list[x].push_back(i); // Add to the component list
-//                 }
-//             }
-//         }
-
-//         // Initialize the cheapest edge for each component to None
-//         cheapest_node.clear();
-
-//         #pragma omp parallel for num_threads(num_threads)
-//         for (int i = 0; i < input_edge_list.size(); i++) {
-//             auto u = std::get<0>(input_edge_list[i]);
-//             auto v = std::get<1>(input_edge_list[i]);
-//             auto w = std::get<2>(input_edge_list[i]);
-
-//             auto u_rep = output_graph.find_set_rep(u);
-//             auto v_rep = output_graph.find_set_rep(v);
-
-//             // u and v belong to different components
-//             if (u_rep != v_rep) {
-
-//                 // u's component doesn't currently have a cheapest node or
-//                 // the weight of the current edge is smaller than the current smallest edge weight
-//                 #pragma omp critical
-//                 {
-//                     if (cheapest_node.find(u_rep) == cheapest_node.end() ||
-//                     w < std::get<2>(cheapest_node[u_rep]) ||
-//                     tie_breaking_rule(input_edge_list[i], cheapest_node[u_rep])) {
-//                         cheapest_node[u_rep] = input_edge_list[i];
-//                     }
-//                 }
-//                 #pragma omp critical
-//                 {
-//                     if (cheapest_node.find(v_rep) == cheapest_node.end() ||
-//                     w < std::get<2>(cheapest_node[v_rep]) ||
-//                     tie_breaking_rule(input_edge_list[i], cheapest_node[v_rep])) {
-//                         cheapest_node[v_rep] = input_edge_list[i];
-//                     }
-//                 }
-
-//             }
-//             else {
-//                 // As an optimization, one could remove from G each edge that is found to connect two
-//                 // vertices in the same component, so that it does not contribute to the time for searching
-//                 // for cheapest edges in later components.
-//                 input_edge_list.erase(input_edge_list.begin() + i);
-//            }
-
-//         }
-
-//         if (cheapest_node.size() != 0) {
-//             // #pragma omp parallel for num_threads(num_threads)
-//             for (const auto& x : cheapest_node) {
-//                 #pragma omp critical
-//                 {
-//                     std::cout << "  Adding edge from " << std::get<0>(x.second) << " to " << std::get<1>(x.second) << " with weight " << std::get<2>(x.second) << std::endl;
-//                     output_graph.add_edge(x.second);
-//                     output_graph.union_set(std::get<0>(x.second), std::get<1>(x.second));
-//                 }
-//             }
-//         } else {
-//             completed = true;
-//         }
-
-//         component_list.clear();
-//     }
-
-//     return output_graph;
-// }
 
 #endif
