@@ -18,7 +18,7 @@
 class graph {
 public:
     int num_vertices;
-    std::vector<std::tuple<int, int, int>> edge_list;
+    std::vector<std::tuple<int, int, int, bool>> edge_list;
     std::vector<int> parents;
     std::vector<int> ranks;
 
@@ -32,10 +32,10 @@ public:
     }
 
     void add_edge(int v1, int v2, int weight) {
-        edge_list.push_back(std::make_tuple(v1, v2, weight));
+        edge_list.push_back(std::make_tuple(v1, v2, weight, false));
     }
 
-    void add_edge(std::tuple<int, int, int> edge) {
+    void add_edge(std::tuple<int, int, int, bool> edge) {
         edge_list.push_back(edge);
     }
 
