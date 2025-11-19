@@ -1,5 +1,5 @@
 
-#include "graph.hpp"
+#include "graph_adj_list.hpp"
 #include "boruvka.hpp"
 
 #include <chrono>
@@ -19,7 +19,7 @@ int main() {
 }
 
 void gfg_test() {
-    graph g(4);
+    graph_adj_list g(4);
 
     g.add_edge(0, 1, 10);
     g.add_edge(0, 2, 6);
@@ -36,7 +36,7 @@ void gfg_test() {
 
 void new_test() {
     std::cout << "\n\nNEW TEST\n" << std::endl;
-    graph g(9);
+    graph_adj_list g(9);
 
     g.add_edge(0, 1, 17);
     g.add_edge(0, 2, 16);
@@ -63,14 +63,14 @@ void new_test() {
     std::cout << "Serial Implementation ran for " << ms.count() << std::endl;
 
     output.to_string();
-    #ifdef _OPENMP
-        std::cout << "\n\nOpenMP Trial" << std::endl;
-        auto t3 = std::chrono::system_clock::now();
-        output = boruvka_mst_openmp(g, 16);
-        auto t4 = std::chrono::system_clock::now();
-        ms = t4 - t3;
-        output.to_string();
-        std::cout << "OpenMP Implementation ran for " << ms.count() << std::endl;
-    #endif
+    // #ifdef _OPENMP
+    //     std::cout << "\n\nOpenMP Trial" << std::endl;
+    //     auto t3 = std::chrono::system_clock::now();
+    //     output = boruvka_mst_openmp(g, 16);
+    //     auto t4 = std::chrono::system_clock::now();
+    //     ms = t4 - t3;
+    //     output.to_string();
+    //     std::cout << "OpenMP Implementation ran for " << ms.count() << std::endl;
+    // #endif
 
 }

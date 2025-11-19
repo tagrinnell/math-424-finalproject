@@ -10,7 +10,7 @@ ROOT_DIR=$(pwd)
 
 manual:
 	g++ -fopenmp main.cpp -o main.o -c $<
-	g++ -fopenmp -lgomp -lm main.o -o main.exe
+	g++ -fopenmp -lgomp -lm main.o -o main.exe -I.
 
 main.exe: $(OBJECTS)
 	$(CC) $(LFLAGS) $(OBJECTS) $(FFLAGS) -o main.exe
