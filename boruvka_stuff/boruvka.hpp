@@ -244,7 +244,18 @@ graph_adj_list boruvka_mst_mpi(graph_adj_list input_graph) {
 
     bool completed = false;
     while (!completed) {
+        // Find Components
+        if (rank == 0) {
 
+
+            // Scatter components across the world
+
+        } else {
+            // Receive component number
+        }
+
+        // Find cheapest edge for all components
+        // Using each node that is a part of the
     }
     return output_graph;
 }
