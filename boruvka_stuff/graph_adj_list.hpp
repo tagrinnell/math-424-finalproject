@@ -80,7 +80,8 @@ public:
     }
 
     void to_string() {
-        std::cout << "Graph to string: " << std::endl;
+        std::cout << "\n-----------------------------------------------" << std::endl;
+        std::cout << "\nGraph to string: " << std::endl;
         for (int i = 0; i < edge_list.size() - 1; i++) {
             for (int j = i + 1; j < edge_list[i].size(); j++) {
                 if (edge_list[i][j] != -1) {
@@ -88,6 +89,7 @@ public:
                 }
             }
         }
+        std::cout << "\n-----------------------------------------------" << std::endl;
     }
 
     // bool edge_already_exists(int u, int v, int w) {

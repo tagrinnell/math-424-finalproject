@@ -7,12 +7,14 @@
 #include <cmath>
 #include <chrono>
 
+#define _MPI true
+
 #ifdef _OPENMP
     #include <omp.h>
 #endif
-// #ifdef _MPI
+#ifdef _MPI
     #include <mpi.h>
-// #endif
+#endif
 
 #define MPI_PARENT_VEC_TAG 0
 
@@ -217,6 +219,7 @@ inline void print_tuple(std::tuple<int, int, int, bool> edge) {
 //     return output_graph;
 // }
 
+#ifdef _MPI
 
 // https://github.com/nikitawani07/MST-Parallel/blob/master/src/boruvka.c
 graph_adj_list boruvka_mst_mpi(graph_adj_list input_graph) {
@@ -244,6 +247,7 @@ graph_adj_list boruvka_mst_mpi(graph_adj_list input_graph) {
 
     bool completed = false;
     while (!completed) {
+        // TODO this
 
     }
     return output_graph;
@@ -298,6 +302,30 @@ void parent_arr_send(int world, int rank, std::vector<int> parent_vector) {
         MPI_Send(&parent_vector[0], parent_vector.size(), MPI_INT, 0, MPI_PARENT_VEC_TAG, MPI_COMM_WORLD);
     }
 }
+
+std::vector<int> component_arr_receive(int world, int rank, int parent_vector_size) {
+    std::vector<int> r_vector(parent_vector_size);
+    // Rank 0 --> receiving from all other processes
+    if (rank != 0) {
+        // MPI_Scatter();
+        MPI_Bcast(&r_vector[0], parent_vector_size, MPI_INT, 0, MPI_COMM_WORLD);
+    }
+    return r_vector;
+}
+
+void component_arr_send(int world, int rank, std::vector<int> component_vector) {
+    if (rank == 0) {
+        // Scatter count
+        auto scatter_count = component_vector.size() / (world - 1);  // Divide among the ranks other than 1
+        auto scatter_remainder = component_vector.size() - scatter_count;
+        // send_count --> how much is sent to each process
+        MPI_Scatter(&component_vector[0], scatter_count,)
+    } else {
+        std::cout << "Sending from rank " << rank << std::endl;
+        // MPI_Send(&parent_vector[0], parent_vector.size(), MPI_INT, 0, MPI_PARENT_VEC_TAG, MPI_COMM_WORLD);
+    }
+}
+#endif
 
 
 #endif

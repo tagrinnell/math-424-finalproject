@@ -14,8 +14,8 @@ void mpi_test(int argc, char** argv);
 
 int main(int argc, char** argv) {
     // gfg_test();
-    // new_test();
-    mpi_test(argc, argv);
+    new_test();
+    // mpi_test(argc, argv);
 
     return 0;
 }
@@ -40,11 +40,10 @@ void mpi_test(int argc, char** argv) {
     g.add_edge(3, 7, 3);
 
     // g.add_edge(0, 1, 2);
-
+#ifdef _MPI
     auto output = mpi_wrapper(g, argc, argv);
-
-
     output.to_string();
+#endif
 }
 
 void gfg_test() {
