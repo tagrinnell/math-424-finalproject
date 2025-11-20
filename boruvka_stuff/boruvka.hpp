@@ -5,9 +5,16 @@
 
 #include <iostream>
 #include <cmath>
+#include <chrono>
+
 #ifdef _OPENMP
     #include <omp.h>
 #endif
+// #ifdef _MPI
+    #include <mpi.h>
+// #endif
+
+#define MPI_PARENT_VEC_TAG 0
 
 inline bool tie_breaking_rule(int u, int v, int w, std::tuple<int, int, int> cheapest_node_edge);
 inline void print_tuple(std::tuple<int, int, int, bool> edge);
@@ -212,8 +219,85 @@ inline void print_tuple(std::tuple<int, int, int, bool> edge) {
 
 
 // https://github.com/nikitawani07/MST-Parallel/blob/master/src/boruvka.c
-graph_adj_list boruvka_mst_mpi() {
-    return;
+graph_adj_list boruvka_mst_mpi(graph_adj_list input_graph) {
+    // Idea:
+    // All processes will have the list of edges
+
+    /*
+    while (not completed)
+        Broadcast: Parent vector (Or changes to the parent vector)
+        Scatter: Component List (Representative)
+
+        for each component in the component list
+            find cheapest edge for each component (but only that component)
+            union set and
+
+        Gather:
+            Added edges
+            Parent vectors (Need to )
+    */
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    graph_adj_list output_graph(input_graph.num_vertices);
+
+    bool completed = false;
+    while (!completed) {
+
+    }
+    return output_graph;
 }
+
+graph_adj_list mpi_wrapper(graph_adj_list input_graph, int  argc, char** argv) {
+    auto err = MPI_Init(&argc, &argv);
+    if (err != MPI_SUCCESS) {
+        std::cout << "MPI failed somehow" << std::endl;
+    }
+
+    const auto t1 = std::chrono::high_resolution_clock::now();
+    auto out = boruvka_mst_mpi(input_graph);
+    const auto t2 = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double, std::milli> ms = t2 - t1;
+    std::cout << "Serial Implementation ran for " << ms.count() << std::endl;
+
+    MPI_Finalize();
+
+    return out;
+}
+
+std::vector<int> parent_arr_receive(int world, int rank, int parent_vector_size) {
+    std::vector<int> r_vector(parent_vector_size);
+    // Rank 0 --> receiving from all other processes
+    if (rank == 0) {
+        std::vector<std::vector<int>> tmp_vec(world - 1);
+        for (int i = 1; i < world; i++) {
+            // std::cout << "Rank 0 sending to " << i << std::endl;
+            tmp_vec[i - 1].resize(parent_vector_size);
+            MPI_Recv(&tmp_vec[i - 1][0], parent_vector_size, MPI_INT, i, MPI_PARENT_VEC_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+        // TODO Logic to determine which edge is the "Correct" edge
+        for (auto x : tmp_vec) {
+            for (auto y : x) {
+                std::cout << y << ", ";
+            }
+            std::cout << std::endl;
+        }
+    } else { // Else we're receiving from 0 on initial broadcast
+        MPI_Bcast(&r_vector[0], parent_vector_size, MPI_INT, 0, MPI_COMM_WORLD);
+    }
+    return r_vector;
+}
+
+void parent_arr_send(int world, int rank, std::vector<int> parent_vector) {
+    if (rank == 0) {
+        MPI_Bcast(&parent_vector[0], parent_vector.size(), MPI_INT, rank, MPI_COMM_WORLD);
+    } else {
+        std::cout << "Sending from rank " << rank << std::endl;
+        MPI_Send(&parent_vector[0], parent_vector.size(), MPI_INT, 0, MPI_PARENT_VEC_TAG, MPI_COMM_WORLD);
+    }
+}
+
 
 #endif

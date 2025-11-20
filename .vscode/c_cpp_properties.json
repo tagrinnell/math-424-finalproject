@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${default}",
-                "${workspaceFolder}/boruvka_stuff"
+                "${workspaceFolder}/boruvka_stuff",
+                "/usr/lib/x86_64-linux-gnu/openmpi/include"
             ],
             "defines": [],
             "cStandard": "c17",

@@ -10,12 +10,41 @@
 
 void gfg_test();
 void new_test();
+void mpi_test(int argc, char** argv);
 
-int main() {
+int main(int argc, char** argv) {
     // gfg_test();
-    new_test();
+    // new_test();
+    mpi_test(argc, argv);
 
     return 0;
+}
+
+void mpi_test(int argc, char** argv) {
+    std::cout << "\n\nMPI TEST\n" << std::endl;
+    graph_adj_list g(9);
+
+    g.add_edge(0, 1, 17);
+    g.add_edge(0, 2, 16);
+    g.add_edge(0, 4, 2);
+    g.add_edge(0, 5, 15);
+    g.add_edge(4, 5, 3);
+    g.add_edge(4, 1, 1);
+    g.add_edge(5, 2, 2);
+    g.add_edge(1, 2, 14);
+    g.add_edge(1, 3, 14);
+    g.add_edge(2, 3, 15);
+    g.add_edge(2, 6, 4);
+    g.add_edge(2, 7, 5);
+    g.add_edge(3, 8, 7);
+    g.add_edge(3, 7, 3);
+
+    // g.add_edge(0, 1, 2);
+
+    auto output = mpi_wrapper(g, argc, argv);
+
+
+    output.to_string();
 }
 
 void gfg_test() {
