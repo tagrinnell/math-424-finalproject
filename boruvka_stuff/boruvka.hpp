@@ -16,7 +16,11 @@
     #include <mpi.h>
 #endif
 
-#define MPI_PARENT_VEC_TAG 0
+#define ROOT_RANK 0
+
+#define PARENT_VEC_TAG 0
+#define SCATTER_TAG 1
+#define REMAINDER_TAG 2
 
 inline bool tie_breaking_rule(int u, int v, int w, std::tuple<int, int, int> cheapest_node_edge);
 inline void print_tuple(std::tuple<int, int, int, bool> edge);
@@ -243,22 +247,59 @@ graph_adj_list boruvka_mst_mpi(graph_adj_list input_graph) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    graph_adj_list output_graph(input_graph.num_vertices);
+    auto n_vertices = input_graph.num_vertices;
+    auto input_edge_list = input_graph.edge_list;
+    graph_adj_list output_graph(n_vertices);
 
     bool completed = false;
     while (!completed) {
         // Find Components
         if (rank == 0) {
-
-
+            std::vector<int> component_list;
+            std::unordered_map<int, bool> comp_test;
+            for (int i = 0; i < n_vertices; i++) {
+                auto rep = input_graph.find_set_rep(i);
+                if (comp_test.find(rep) == comp_test.end()) {
+                    comp_test[rep] = true;
+                    component_list.push_back(rep);
+                }
+            }
             // Scatter components across the world
-
+            component_arr_send(size, rank, component_list);
         } else {
             // Receive component number
+            auto comp_map = component_arr_receive(size, rank);
+
+            for (int i = 0; i < n_vertices; i++) {
+                auto find_rep = output_graph.find_set_rep(i);
+
+                // We have a vector that we're comparing
+                if (comp_map.find(find_rep) != comp_map.end()) {
+                    int smallest_weight = RAND_MAX;
+                    for (int j = 0; j < input_edge_list[i].size(); j++) {
+                        auto curr_weight = input_edge_list[i][j];
+                        if (i != j && curr_weight < smallest_weight &&
+                            tie_breaking_rule(i, j, curr_weight)
+                    }
+                }
+            }
+
         }
 
         // Find cheapest edge for all components
         // Using each node that is a part of the
+        if (rank != 0) {
+
+        } else {
+            // Rank 0 Accumulates all the parent vectors and processes the changes
+            // Then broadcasts the Canonical parent vector
+            // auto c
+
+            // For each component, search through each vertex that is a component
+
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD);
     }
     return output_graph;
 }
@@ -281,15 +322,15 @@ graph_adj_list mpi_wrapper(graph_adj_list input_graph, int  argc, char** argv) {
     return out;
 }
 
-std::vector<int> parent_arr_receive(int world, int rank, int parent_vector_size) {
+std::vector<int> parent_arr_receive(int size, int rank, int parent_vector_size) {
     std::vector<int> r_vector(parent_vector_size);
     // Rank 0 --> receiving from all other processes
     if (rank == 0) {
-        std::vector<std::vector<int>> tmp_vec(world - 1);
-        for (int i = 1; i < world; i++) {
+        std::vector<std::vector<int>> tmp_vec(size- 1);
+        for (int i = 1; i < size; i++) {
             // std::cout << "Rank 0 sending to " << i << std::endl;
             tmp_vec[i - 1].resize(parent_vector_size);
-            MPI_Recv(&tmp_vec[i - 1][0], parent_vector_size, MPI_INT, i, MPI_PARENT_VEC_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&tmp_vec[i - 1][0], parent_vector_size, MPI_INT, i, PARENT_VEC_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
         // TODO Logic to determine which edge is the "Correct" edge
         for (auto x : tmp_vec) {
@@ -299,37 +340,69 @@ std::vector<int> parent_arr_receive(int world, int rank, int parent_vector_size)
             std::cout << std::endl;
         }
     } else { // Else we're receiving from 0 on initial broadcast
-        MPI_Bcast(&r_vector[0], parent_vector_size, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&r_vector[0], parent_vector_size, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
     }
     return r_vector;
 }
 
-void parent_arr_send(int world, int rank, std::vector<int> parent_vector) {
+void parent_arr_send(int size, int rank, std::vector<int> parent_vector) {
     if (rank == 0) {
-        MPI_Bcast(&parent_vector[0], parent_vector.size(), MPI_INT, rank, MPI_COMM_WORLD);
+        MPI_Bcast(&parent_vector[0], parent_vector.size(), MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
     } else {
         std::cout << "Sending from rank " << rank << std::endl;
-        MPI_Send(&parent_vector[0], parent_vector.size(), MPI_INT, 0, MPI_PARENT_VEC_TAG, MPI_COMM_WORLD);
+        MPI_Send(&parent_vector[0], parent_vector.size(), MPI_INT, rank, PARENT_VEC_TAG, MPI_COMM_WORLD);
     }
 }
 
-std::vector<int> component_arr_receive(int world, int rank, int parent_vector_size) {
-    std::vector<int> r_vector(parent_vector_size);
+// TODO test
+std::unordered_map<int, bool> component_arr_receive(int size, int rank) {
+    std::unordered_map<int, bool> ret_map;
+
     // Rank 0 --> receiving from all other processes
     if (rank != 0) {
-        // MPI_Scatter();
-        MPI_Bcast(&r_vector[0], parent_vector_size, MPI_INT, 0, MPI_COMM_WORLD);
+        // Receive # of components to receive
+        int receive_size;
+        MPI_Bcast(&receive_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        std::vector<int> receiving_vector(receive_size);
+        MPI_Scatter(&receiving_vector[0], 0, MPI_INT, &receiving_vector[0], receive_size, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+
+        if (rank == size - 1) {
+            int scatter_remainder;
+            MPI_Recv(&scatter_remainder, 1, MPI_INT, ROOT_RANK, SCATTER_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            if (scatter_remainder > 0) {
+                receiving_vector.resize(receive_size + scatter_remainder);
+                MPI_Recv(&receiving_vector[receiving_vector.size() - scatter_remainder], scatter_remainder, MPI_INT, ROOT_RANK, REMAINDER_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            }
+        }
+        // initialize map to return for easy searching
+        for (auto i : receiving_vector) {
+            ret_map[i] = true;
+        }
     }
-    return r_vector;
+    return ret_map;
 }
 
-void component_arr_send(int world, int rank, std::vector<int> component_vector) {
+// TODO Test
+void component_arr_send(int size, int rank, std::vector<int> component_list) {
     if (rank == 0) {
-        // Scatter count
-        auto scatter_count = component_vector.size() / (world - 1);  // Divide among the ranks other than 1
-        auto scatter_remainder = component_vector.size() - scatter_count;
-        // send_count --> how much is sent to each process
-        MPI_Scatter(&component_vector[0], scatter_count,)
+        // We can scatter multiple components per process
+        if (component_list.size() > size) {
+            // Scatter count
+            auto scatter_count = component_list.size() / (size- 1);  // Divide among the ranks other than 1
+            auto scatter_remainder = component_list.size() - (size - 1) * scatter_count;
+
+            MPI_Bcast(&scatter_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+            // send_count --> how much is sent to each process
+            MPI_Scatter(&component_list[0], scatter_count, MPI_INT, NULL, 0, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+
+            // Send the number of remaining elements to the last process
+            MPI_Send(&scatter_remainder, 1, MPI_INT, size - 1, REMAINDER_TAG, MPI_COMM_WORLD);
+            MPI_Send(&component_list[component_list.size() - scatter_remainder], scatter_remainder, MPI_INT, size- 1, REMAINDER_TAG, MPI_COMM_WORLD);
+        } else {
+            // TODO send
+        }
     } else {
         std::cout << "Sending from rank " << rank << std::endl;
         // MPI_Send(&parent_vector[0], parent_vector.size(), MPI_INT, 0, MPI_PARENT_VEC_TAG, MPI_COMM_WORLD);
