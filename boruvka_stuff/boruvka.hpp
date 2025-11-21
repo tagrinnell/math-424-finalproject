@@ -194,9 +194,8 @@ graph boruvka_mst_openmp(graph input_graph, int num_threads) {
 }
 #endif
 
-#ifndef _OPENMP && _MPI
+#ifndef _OPENMP
 
-// TODO change to receive
 std::vector<int> parent_arr_receive(int size, int rank, int parent_vector_size) {
     std::vector<int> r_vector(parent_vector_size);
     // Receive the Canonical parent vector from root node
@@ -221,11 +220,16 @@ std::vector<int> edge_receive(int size, int rank, int dispatched_components) {
     if (rank == 0) {
         for (int i = 1; i < size || i < dispatched_components; i++) {
             // Receive number of edges going to be transmitted by non-root rank processes
-            int num_rec;
+            int num_rec = 0;
             MPI_Recv(&num_rec, 1, MPI_INT, i, EDGE_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             int old_size = receive_edges.size();
             receive_edges.resize(old_size + num_rec);
+            std::cout << "Old size " << old_size << "; New size " << receive_edges.size() << std::endl;
             MPI_Recv(&receive_edges[old_size], num_rec, MPI_INT, i, EDGE_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            for (auto i : receive_edges) {
+                std::cout << i << " ";
+            }
+            std::cout << std::endl;
         }
     }
     return receive_edges;
@@ -234,10 +238,11 @@ std::vector<int> edge_receive(int size, int rank, int dispatched_components) {
 void edge_send(int size, int rank, std::vector<int> edges_to_send) {
     // Send edges_to_send to the root node
     if (rank != 0) {
+        int size_send = edges_to_send.size();
+        MPI_Send(&size_send, 1, MPI_INT, ROOT_RANK, EDGE_TAG, MPI_COMM_WORLD);
         MPI_Send(&edges_to_send[0], edges_to_send.size(), MPI_INT, ROOT_RANK, EDGE_TAG, MPI_COMM_WORLD);
     }
 }
-
 
 // TODO test
 std::unordered_map<int, bool> component_arr_receive(int size, int rank) {
@@ -245,25 +250,40 @@ std::unordered_map<int, bool> component_arr_receive(int size, int rank) {
 
     // Rank 0 --> receiving from all other processes
     if (rank != 0) {
+        std::cout << "Rank " << rank << " receiving components" << std::endl;
         // Receive # of components to receive
         int receive_size;
-        MPI_Bcast(&receive_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&receive_size, 1, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
 
         std::vector<int> receiving_vector(receive_size);
-        MPI_Scatter(&receiving_vector[0], 0, MPI_INT, &receiving_vector[0], receive_size, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+        std::vector<int> component_list(receive_size);
+        std::cout << "  Receive size " << receive_size << std::endl;
+        MPI_Scatter(&component_list[0], receive_size, MPI_INT,
+                    &receiving_vector[0], receive_size, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+
+        for (auto i : receiving_vector) {
+            std::cout << i << " ";
+        }
+
+        std::cout << "\n  Rank " << rank << " after scatter " << std::endl;
 
         if (rank == size - 1) {
+            std::cout << "Reaching scatter remainder section " << std::endl;
             int scatter_remainder;
-            MPI_Recv(&scatter_remainder, 1, MPI_INT, ROOT_RANK, SCATTER_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&scatter_remainder, 1, MPI_INT, ROOT_RANK, REMAINDER_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             if (scatter_remainder > 0) {
                 receiving_vector.resize(receive_size + scatter_remainder);
                 MPI_Recv(&receiving_vector[receiving_vector.size() - scatter_remainder], scatter_remainder, MPI_INT, ROOT_RANK, REMAINDER_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             }
         }
+
+        std::cout << "\t Rank " << rank << ": ";
         // initialize map to return for easy searching
         for (auto i : receiving_vector) {
+            std::cout << i << " ";
             ret_map[i] = true;
         }
+        std::cout << std::endl;
     }
     return ret_map;
 }
@@ -278,16 +298,23 @@ void component_arr_send(int size, int rank, std::vector<int> component_list) {
             auto scatter_count = component_list.size() / (size- 1);  // Divide among the ranks other than 1
             auto scatter_remainder = component_list.size() - (size - 1) * scatter_count;
 
-            MPI_Bcast(&scatter_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            std::cout << "Broadcasting" << std::endl;;
+            MPI_Bcast(&scatter_count, 1, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
 
+            std::cout << "Scattering" << std::endl;;
             // send_count --> how much is sent to each process
-            MPI_Scatter(&component_list[0], scatter_count, MPI_INT, NULL, 0, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+            std::vector<int> receiving_vector(scatter_count);
+            MPI_Scatter(&component_list[0], scatter_count, MPI_INT, &receiving_vector[0], scatter_count, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+
+            std::cout << "Scattering remainder " << scatter_remainder << std::endl;
 
             // Send the number of remaining elements to the last process
             MPI_Send(&scatter_remainder, 1, MPI_INT, size - 1, REMAINDER_TAG, MPI_COMM_WORLD);
-            MPI_Send(&component_list[component_list.size() - scatter_remainder], scatter_remainder, MPI_INT, size- 1, REMAINDER_TAG, MPI_COMM_WORLD);
+            if (scatter_remainder > 0) {
+                MPI_Send(&component_list[component_list.size() - scatter_remainder], scatter_remainder, MPI_INT, size- 1, REMAINDER_TAG, MPI_COMM_WORLD);
+            }
         } else {
-            // TODO Send
+            // TODO Scatter a single component to each of the remaining processes
         }
     } else {
         std::cout << "Sending from rank " << rank << std::endl;
@@ -442,6 +469,6 @@ graph_adj_list mpi_wrapper(graph_adj_list input_graph, int  argc, char** argv) {
     return out;
 }
 
-// #endif
+#endif
 
 #endif

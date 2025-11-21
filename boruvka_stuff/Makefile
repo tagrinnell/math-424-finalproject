@@ -13,7 +13,7 @@ mpi_main:
 	mpicxx main.cpp -o main.o && mpiexec -np 3 ./main.o
 
 mpitest:
-	mpicxx mpi_testing.cpp -o mpi_test.o && mpiexec -n 3 ./mpi_test.o
+	mpicxx mpi_testing.cpp -o mpi_test.o && mpiexec -n 4 ./mpi_test.o
 
 clean:
 	rm -f $(OBJECTS) *.exe *.o

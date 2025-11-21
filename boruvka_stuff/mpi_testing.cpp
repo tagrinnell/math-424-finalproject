@@ -30,9 +30,14 @@ int main(int argc, char** argv) {
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    std::cout << "Rank " << rank << ", world size " << size << std::endl;
 
-    parent_arr_mpi(size, rank);
+    srand(rank * size);
+    // std::cout << "Rank " << rank << ", world size " << size << std::endl;
+
+    // parent_arr_mpi(size, rank);
+    // edge_lists_mpi(size, rank);
+    component_mpi(size, rank);
+    // emulate_mpi(size, rank);
 
     MPI_Finalize();
 
@@ -71,16 +76,49 @@ void parent_arr_mpi(int size, int rank) {
 
 // TODO Edge lists send / receive
 void edge_lists_mpi(int size, int rank) {
+    if (rank == 0) {
+        std::cout << "EDGE TEST" << std::endl;
+        // Generate random parent vector
+        auto receive_edges = edge_receive(size, rank, size - 1);
 
+        std::cout << "vec size " << receive_edges.size() << "  ";
+        print_vec(rank, receive_edges);
+
+    } else {
+        // Generate a random vector of size 3x and send to root rank
+        std::vector<int> random_vec(6 * rank);
+        for (int i = 0; i < 6 * rank; i++) {
+            random_vec[i] = 2 * i;
+        }
+        std::cout << "vec size " << 6 * rank << "  ";
+        print_vec(rank, random_vec);
+        edge_send(size, rank, random_vec);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 // TODO Component Array send / receive
 void component_mpi(int size, int rank) {
+    if (rank == 0) {
+        std::vector<int> comp_list;
+        for (int i = 0; i < 11; i++) {
+            comp_list.push_back(i);
+        }
+        print_vec(rank, comp_list);
 
+        component_arr_send(size, rank, comp_list);
+
+    } else {
+        auto comp_map = component_arr_receive(size, rank);
+        for (auto x : comp_map) {
+            std::cout << x.second << " ";
+        }
+    }
 }
 
 // TODO Do series of sends / receives like in the boruvka_mst_mpi function
-void emulate_mpi() {
+void emulate_mpi(int size, int rank) {
 
 }
 
