@@ -9,9 +9,11 @@ manual:
 	g++ -fopenmp -lgomp -lm main.o -o main.exe -I.
 
 # mpicxx mpi_testing.cpp -o mpi_test.o && mpiexec -n 3 ./mpi_test.o
-mpi:
-	mpicxx mpi_testing.cpp -o mpi_test.o && mpiexec ./mpi_test.o -n 3
-# 	mpicc main.cpp -o main.o
+mpi_main:
+	mpicxx main.cpp -o main.o && mpiexec -np 3 ./main.o
+
+mpitest:
+	mpicxx mpi_testing.cpp -o mpi_test.o && mpiexec -n 3 ./mpi_test.o
 
 clean:
 	rm -f $(OBJECTS) *.exe *.o
