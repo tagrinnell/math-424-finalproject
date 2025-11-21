@@ -194,7 +194,7 @@ graph boruvka_mst_openmp(graph input_graph, int num_threads) {
 }
 #endif
 
-// #ifdef _MPI
+#ifndef _OPENMP && _MPI
 
 // TODO change to receive
 std::vector<int> parent_arr_receive(int size, int rank, int parent_vector_size) {

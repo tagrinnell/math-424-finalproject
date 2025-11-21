@@ -69,13 +69,18 @@ void parent_arr_mpi(int size, int rank) {
     MPI_Barrier(MPI_COMM_WORLD);
 }
 
-// Edge lists send / receive
+// TODO Edge lists send / receive
 void edge_lists_mpi(int size, int rank) {
 
 }
 
-// Component Array send / receive
+// TODO Component Array send / receive
 void component_mpi(int size, int rank) {
+
+}
+
+// TODO Do series of sends / receives like in the boruvka_mst_mpi function
+void emulate_mpi() {
 
 }
 
