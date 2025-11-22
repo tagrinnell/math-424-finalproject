@@ -14,14 +14,14 @@ void mpi_test(int argc, char** argv);
 
 int main(int argc, char** argv) {
     // gfg_test();
-    new_test();
-    // mpi_test(argc, argv);
+    // new_test();
+    mpi_test(argc, argv);
 
     return 0;
 }
 
 void mpi_test(int argc, char** argv) {
-    std::cout << "\n\nMPI TEST\n" << std::endl;
+    // std::cout << "\n\nMPI TEST\n" << std::endl;
     graph_adj_list g(9);
 
     g.add_edge(0, 1, 17);
@@ -39,11 +39,13 @@ void mpi_test(int argc, char** argv) {
     g.add_edge(3, 8, 7);
     g.add_edge(3, 7, 3);
 
-    // g.add_edge(0, 1, 2);
-#ifdef _MPI
+    std::cout << "\tBASELINE" << std::endl;
+    auto test = boruvka_mst(g);
+    test.to_string();
+
+    // std::cout << "\tMPI RUN" << std::endl;
     auto output = mpi_wrapper(g, argc, argv);
-    output.to_string();
-#endif
+    // output.to_string();
 }
 
 void gfg_test() {

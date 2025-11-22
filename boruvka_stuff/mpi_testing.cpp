@@ -24,6 +24,7 @@ void print_vec(int rank, std::vector<int> vec);
 int main(int argc, char** argv) {
     auto err = MPI_Init(&argc, &argv);
     if (err != MPI_SUCCESS) {
+        std::cout << "MPI ERROR" << std::endl;
         return -1;
     }
 
@@ -31,12 +32,32 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    srand(rank * size);
-    // std::cout << "Rank " << rank << ", world size " << size << std::endl;
+
+    if (rank == 2) {
+        MPI_Finalize();
+        std::cout << "Rank 2 returning" << std::endl;
+        return 0;
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // srand(rank * size);
+    // // std::cout << "Rank " << rank << ", world size " << size << std::endl;
+    // if (rank == 0) {
+    //     std::cout << "\n\t Parent Test" << std::endl;
+    // }
 
     // parent_arr_mpi(size, rank);
+    // MPI_Barrier(MPI_COMM_WORLD);
+    // if (rank == 0) {
+    //     std::cout << "\n\t Edge Test" << std::endl;
+    // }
     // edge_lists_mpi(size, rank);
-    component_mpi(size, rank);
+    // MPI_Barrier(MPI_COMM_WORLD);
+    // if (rank == 0) {
+    //     std::cout << "\n\t Component Test" << std::endl;
+    // }
+    // component_mpi(size, rank);
     // emulate_mpi(size, rank);
 
     MPI_Finalize();
@@ -49,7 +70,7 @@ int main(int argc, char** argv) {
 void parent_arr_mpi(int size, int rank) {
     int num_indices = 20;
     if (rank == 0) {
-        std::cout << "PARENT TEST" << std::endl;
+        // std::cout << "\tPARENT TEST" << std::endl;
         // Generate random parent vector
         std::vector<int> parent_vec_send(num_indices);
 
@@ -77,7 +98,7 @@ void parent_arr_mpi(int size, int rank) {
 // TODO Edge lists send / receive
 void edge_lists_mpi(int size, int rank) {
     if (rank == 0) {
-        std::cout << "EDGE TEST" << std::endl;
+        // std::cout << "\n\n\tEDGE TEST" << std::endl;
         // Generate random parent vector
         auto receive_edges = edge_receive(size, rank, size - 1);
 
@@ -100,20 +121,53 @@ void edge_lists_mpi(int size, int rank) {
 
 // TODO Component Array send / receive
 void component_mpi(int size, int rank) {
+
     if (rank == 0) {
         std::vector<int> comp_list;
-        for (int i = 0; i < 11; i++) {
+        for (int i = 0; i < 14; i++) {
+            comp_list.push_back(i);
+        }
+        print_vec(rank, comp_list);
+        std::cout << "  Expecting 14 / 4 = 3 with process 3  having 5 components" << std::endl;
+
+        auto x = component_arr_scatter(size, rank, comp_list);
+        std::cout << "Comp map from Rank " << rank << " ";
+        for (auto y : x) {
+            std::cout << y.first << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        auto comp_map = component_arr_scatter(size, rank);
+        std::cout << "Comp map from Rank " << rank << " ";
+        for (auto x : comp_map) {
+            std::cout << x.first << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        std::cout << "\tComponent list size < world size" << std::endl;
+        std::vector<int> comp_list;
+        for (int i = 0; i < 3; i++) {
             comp_list.push_back(i);
         }
         print_vec(rank, comp_list);
 
-        component_arr_send(size, rank, comp_list);
-
-    } else {
-        auto comp_map = component_arr_receive(size, rank);
-        for (auto x : comp_map) {
-            std::cout << x.second << " ";
+        auto x = component_arr_scatter(size, rank, comp_list);
+        std::cout << "Comp map from Rank " << rank << " ";
+        for (auto y : x) {
+            std::cout << y.first << " ";
         }
+        std::cout << std::endl;
+    } else {
+        auto new_map = component_arr_scatter(size, rank);
+        std::cout << "Comp map from Rank " << rank << " ";
+        for (auto x : new_map) {
+            std::cout << x.first << " ";
+        }
+        std::cout << std::endl;
     }
 }
 

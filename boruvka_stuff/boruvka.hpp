@@ -22,6 +22,7 @@
 #define SCATTER_TAG 1
 #define REMAINDER_TAG 2
 #define EDGE_TAG 3
+#define COMPLETED_TAG 4
 
 inline bool tie_breaking_rule(int u, int v, int w, std::tuple<int, int, int> cheapest_node_edge);
 inline bool tie_breaking_rule(int u, int v, int w, int i, int j, int k);
@@ -73,7 +74,6 @@ graph_adj_list boruvka_mst(graph_adj_list input_graph) {
 
     bool completed = false;
     while (!completed) {
-        std::cout << "New Iteration" << std::endl;
         // Initialize the cheapest edge for each component to None
         cheapest_node.clear();
 
@@ -113,7 +113,6 @@ graph_adj_list boruvka_mst(graph_adj_list input_graph) {
 
         if (cheapest_node.size() != 0) {
             for (auto& x : cheapest_node) {
-                std::cout << "  Adding edge from " << std::get<0>(x.second) << " to " << std::get<1>(x.second) << " with weight " << int(std::get<2>(x.second)) << std::endl;
                 output_graph.add_edge(x.second);
                 output_graph.union_set(std::get<0>(x.second), std::get<1>(x.second));
             }
@@ -207,9 +206,10 @@ std::vector<int> parent_arr_receive(int size, int rank, int parent_vector_size) 
 
 void parent_arr_send(int size, int rank, std::vector<int> parent_vector) {
     if (rank == 0) {
+        // std::cout << "Root entering parent_arr_send" << std::endl;
         MPI_Bcast(&parent_vector[0], parent_vector.size(), MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
     } else {
-        std::cout << "Sending from rank " << rank << std::endl;
+        // std::cout << "Sending from rank " << rank << std::endl;
         MPI_Send(&parent_vector[0], parent_vector.size(), MPI_INT, rank, PARENT_VEC_TAG, MPI_COMM_WORLD);
     }
 }
@@ -218,18 +218,19 @@ std::vector<int> edge_receive(int size, int rank, int dispatched_components) {
     std::vector<int> receive_edges;
     // Receiving edges from
     if (rank == 0) {
-        for (int i = 1; i < size || i < dispatched_components; i++) {
+        // std::cout << "Root entering edge_receive" << std::endl;
+        for (int i = 1; i < size && i < dispatched_components; i++) {
             // Receive number of edges going to be transmitted by non-root rank processes
             int num_rec = 0;
             MPI_Recv(&num_rec, 1, MPI_INT, i, EDGE_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             int old_size = receive_edges.size();
             receive_edges.resize(old_size + num_rec);
-            std::cout << "Old size " << old_size << "; New size " << receive_edges.size() << std::endl;
+            // std::cout << "Old size " << old_size << "; New size " << receive_edges.size() << std::endl;
             MPI_Recv(&receive_edges[old_size], num_rec, MPI_INT, i, EDGE_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            for (auto i : receive_edges) {
-                std::cout << i << " ";
-            }
-            std::cout << std::endl;
+            // for (auto i : receive_edges) {
+            //     std::cout << i << " ";
+            // }
+            // std::cout << std::endl;
         }
     }
     return receive_edges;
@@ -245,81 +246,105 @@ void edge_send(int size, int rank, std::vector<int> edges_to_send) {
 }
 
 // TODO test
-std::unordered_map<int, bool> component_arr_receive(int size, int rank) {
+std::unordered_map<int, bool> component_arr_scatter(int size, int rank, std::vector<int> component_list = std::vector<int>()) {
     std::unordered_map<int, bool> ret_map;
+    std::vector<int> receiving_vector;
 
     // Rank 0 --> receiving from all other processes
-    if (rank != 0) {
-        std::cout << "Rank " << rank << " receiving components" << std::endl;
-        // Receive # of components to receive
-        int receive_size;
-        MPI_Bcast(&receive_size, 1, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
-
-        std::vector<int> receiving_vector(receive_size);
-        std::vector<int> component_list(receive_size);
-        std::cout << "  Receive size " << receive_size << std::endl;
-        MPI_Scatter(&component_list[0], receive_size, MPI_INT,
-                    &receiving_vector[0], receive_size, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
-
-        for (auto i : receiving_vector) {
-            std::cout << i << " ";
-        }
-
-        std::cout << "\n  Rank " << rank << " after scatter " << std::endl;
-
-        if (rank == size - 1) {
-            std::cout << "Reaching scatter remainder section " << std::endl;
-            int scatter_remainder;
-            MPI_Recv(&scatter_remainder, 1, MPI_INT, ROOT_RANK, REMAINDER_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            if (scatter_remainder > 0) {
-                receiving_vector.resize(receive_size + scatter_remainder);
-                MPI_Recv(&receiving_vector[receiving_vector.size() - scatter_remainder], scatter_remainder, MPI_INT, ROOT_RANK, REMAINDER_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            }
-        }
-
-        std::cout << "\t Rank " << rank << ": ";
-        // initialize map to return for easy searching
-        for (auto i : receiving_vector) {
-            std::cout << i << " ";
-            ret_map[i] = true;
-        }
-        std::cout << std::endl;
-    }
-    return ret_map;
-}
-
-// TODO Test
-// TODO Adjust for case where component_list.size() < # available processes = size - 1
-void component_arr_send(int size, int rank, std::vector<int> component_list) {
     if (rank == 0) {
-        // We can scatter multiple components per process
-        if (component_list.size() > size - 1) {
+        // std::cout << "Root entering component_arr_scatter" << std::endl;
+         // We can scatter multiple components per process
+        if (component_list.size() > size) {
+            // std::cout << " Input scatter map: ";
+            // for (auto y : component_list) {
+            //     std::cout << y << " ";
+            // }
+            // std::cout << std::endl;
             // Scatter count
-            auto scatter_count = component_list.size() / (size- 1);  // Divide among the ranks other than 1
-            auto scatter_remainder = component_list.size() - (size - 1) * scatter_count;
+            auto scatter_count = component_list.size() / size;  // Divide among the ranks other than 1
+            auto scatter_remainder = component_list.size() - size * scatter_count;
 
-            std::cout << "Broadcasting" << std::endl;;
+            // std::cout << "Broadcasting" << std::endl;;
             MPI_Bcast(&scatter_count, 1, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
 
-            std::cout << "Scattering" << std::endl;;
+            // std::cout << "Scattering" << std::endl;;
+            receiving_vector.resize(scatter_count);
             // send_count --> how much is sent to each process
-            std::vector<int> receiving_vector(scatter_count);
-            MPI_Scatter(&component_list[0], scatter_count, MPI_INT, &receiving_vector[0], scatter_count, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+            MPI_Scatter(&component_list[0], scatter_count, MPI_INT,
+                        &receiving_vector[0], scatter_count, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
 
-            std::cout << "Scattering remainder " << scatter_remainder << std::endl;
+            // std::cout << "Scattering remainder " << scatter_remainder << std::endl;
 
             // Send the number of remaining elements to the last process
             MPI_Send(&scatter_remainder, 1, MPI_INT, size - 1, REMAINDER_TAG, MPI_COMM_WORLD);
             if (scatter_remainder > 0) {
                 MPI_Send(&component_list[component_list.size() - scatter_remainder], scatter_remainder, MPI_INT, size- 1, REMAINDER_TAG, MPI_COMM_WORLD);
             }
-        } else {
+        } else if (component_list.size() > 1) {
             // TODO Scatter a single component to each of the remaining processes
+            int zero = 0;
+            int terminate_char = -1;
+            MPI_Bcast(&zero, 1, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+            for (int i = 1; i < size; i++) {
+                if (i < component_list.size()) {
+                    MPI_Send(&component_list[i], 1, MPI_INT, i, SCATTER_TAG, MPI_COMM_WORLD);
+                } else {
+                    MPI_Send(&terminate_char, 1, MPI_INT, i, SCATTER_TAG, MPI_COMM_WORLD);
+                }
+            }
+
+            // Send termination value to the rest of the processes
+            for (int i = component_list.size(); i < size; i++) {
+            }
+            receiving_vector.push_back(component_list[0]);
+        } else {
+
         }
     } else {
-        std::cout << "Sending from rank " << rank << std::endl;
-        // MPI_Send(&parent_vector[0], parent_vector.size(), MPI_INT, 0, MPI_PARENT_VEC_TAG, MPI_COMM_WORLD);
+        // std::cout << "Rank " << rank << " receiving components" << std::endl;
+        // Receive # of components to receive
+        int receive_size;
+        MPI_Bcast(&receive_size, 1, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+
+        // Special Code to exit
+        if (receive_size == -1) {
+            receiving_vector.push_back(-1);
+        } else if (receive_size == 0) {
+            receiving_vector.resize(1);
+            MPI_Recv(&receiving_vector[0], 1, MPI_INT, ROOT_RANK, SCATTER_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        } else {
+            receiving_vector.resize(receive_size);
+            std::vector<int> component_list(receive_size);
+            // std::cout << "  Receive size " << receive_size << std::endl;
+            MPI_Scatter(&component_list[0], receive_size, MPI_INT,
+                &receiving_vector[0], receive_size, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+
+            // std::cout << "\n  Rank " << rank << " after scatter " << std::endl;
+            // for (auto i : receiving_vector) {
+            //     std::cout << i << " ";
+            // }
+
+            if (rank == size - 1) {
+                // std::cout << "Reaching scatter remainder section " << std::endl;
+                int scatter_remainder;
+                MPI_Recv(&scatter_remainder, 1, MPI_INT, ROOT_RANK, REMAINDER_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                // std::cout << "Scatter reminder " << scatter_remainder << std::endl;
+                if (scatter_remainder > 0) {
+                    receiving_vector.resize(receive_size + scatter_remainder);
+                    MPI_Recv(&receiving_vector[receiving_vector.size() - scatter_remainder], scatter_remainder, MPI_INT, ROOT_RANK, REMAINDER_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                }
+            }
+        }
+
     }
+    // std::cout << "\t Rank " << rank << ": ";
+    // initialize map to return for easy searching
+    for (auto i : receiving_vector) {
+        // std::cout << i << " ";
+        ret_map[i] = true;
+    }
+    // std::cout << std::endl;
+    return ret_map;
 }
 
 inline bool tie_breaking_rule(int u, int v, int w, int i, int j, int k) {
@@ -347,7 +372,9 @@ graph_adj_list boruvka_mst_mpi(graph_adj_list input_graph) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    if (size <= 2) {
+    // std::cout << "Rank: " << rank << " - Size: " << size << std::endl;
+
+    if (size == 1) {
         return boruvka_mst(input_graph);
     }
 
@@ -356,116 +383,168 @@ graph_adj_list boruvka_mst_mpi(graph_adj_list input_graph) {
     graph_adj_list output_graph(n_vertices);
 
     bool completed = false;
+    bool early_exit = false;
     while (!completed) {
-        int dispatched_components = 0;
-        // Find Components
-        if (rank == 0) {
-            std::vector<int> component_list;
-            std::unordered_map<int, bool> comp_test;
-            for (int i = 0; i < n_vertices; i++) {
-                auto rep = output_graph.find_set_rep(i);
-                if (comp_test.find(rep) == comp_test.end()) {
-                    comp_test[rep] = true;
-                    component_list.push_back(rep);
+        // std::cout << "\n\n" << completed << std::endl;
+        // if (!early_exit) {
+            int dispatched_components = 0;
+            std::unordered_map<int, bool> comp_map;
+            // Find Components
+            if (rank == 0) {
+                // std::cout << "\nNew Iteration" << std::endl;
+                // std::cout << "Completed: " << completed << std::endl;
+                std::vector<int> component_list;
+                std::unordered_map<int, bool> comp_test;
+                for (int i = 0; i < n_vertices; i++) {
+                    auto rep = output_graph.find_set_rep(i);
+                    if (comp_test.find(rep) == comp_test.end()) {
+                        comp_test[rep] = true;
+                        component_list.push_back(rep);
+                    }
+                }
+                // std::cout << "\tComponent_list size: " << component_list.size() << std::endl;
+
+                if (component_list.size() < size) {
+                    dispatched_components = component_list.size();
+                } else {
+                    dispatched_components = size;
+                }
+
+                if (component_list.size() == 1) {
+                    completed = true;
+                    // Send nonsense to the rest of the nodes that exist
+                    int termination = -1;
+                    MPI_Bcast(&termination, 1, MPI_INT, ROOT_RANK, MPI_COMM_WORLD);
+                    break;
+                }
+                // MPI_Bcast(&completed, 1, MPI_CXX_BOOL, ROOT_RANK, MPI_COMM_WORLD);
+                // if (completed) {
+                //     break;
+                // }
+                comp_map = component_arr_scatter(size, rank, component_list);
+                parent_arr_send(size, rank, output_graph.parents);
+            } else {
+                // Check for valid Component map
+                // MPI_Bcast(&completed, 1, MPI_CXX_BOOL, ROOT_RANK, MPI_COMM_WORLD);
+                comp_map = component_arr_scatter(size, rank);
+                if (comp_map.find(-1) != comp_map.end()) {
+                    // early_exit = true;
+                    break;
+                } else {
+                    output_graph.parents = parent_arr_receive(size, rank, output_graph.num_vertices);
                 }
             }
-            if (component_list.size() < size - 1) {
-                dispatched_components = component_list.size();
-            }
-            // Scatter components across the world
-            component_arr_send(size, rank, component_list);
-            parent_arr_send(size, rank, output_graph.parents);
-        } else {
-            // Receive component number
-            auto comp_map = component_arr_receive(size, rank);
-            if (comp_map.size() == 0) {
-                completed = true;
-                break;
-            }
-            output_graph.parents = parent_arr_receive(size, rank, output_graph.num_vertices);
-            std::unordered_map<int, std::tuple<int, int, int>> cheapest_node;
 
-            for (int i = 0; i < n_vertices; i++) {
-                auto find_rep = output_graph.find_set_rep(i);
+            // if (!early_exit) {
 
-                // We have a component that was sent to this process
-                if (comp_map.find(find_rep) != comp_map.end()) {
-                    for (int j = 0; j < input_edge_list[i].size(); j++) {
-                        auto u = i;
-                        auto v = j;
-                        auto w = input_edge_list[i][j];
+                    // Receive component number
+                std::unordered_map<int, std::tuple<int, int, int>> cheapest_node;
 
-                        if (w > 0) {
-                            auto u_rep = find_rep;
-                            auto v_rep = output_graph.find_set_rep(v);
+                for (int i = 0; i < n_vertices; i++) {
+                    auto find_rep = output_graph.find_set_rep(i);
 
-                            // u and v belong to different components
-                            if (u_rep != v_rep) {
+                    // We have a component that was sent to this process
+                    if (comp_map.find(find_rep) != comp_map.end()) {
+                        for (int j = 0; j < input_edge_list[i].size(); j++) {
+                            auto u = i;
+                            auto v = j;
+                            auto w = input_edge_list[i][j];
 
-                                // Same algorithm except we only check the
-                                if (cheapest_node.find(u_rep) == cheapest_node.end() ||
-                                        w < std::get<2>(cheapest_node[u_rep]) ||
-                                        tie_breaking_rule(u, v, w, cheapest_node[u_rep])) {
-                                    cheapest_node[u_rep] = std::make_tuple(u, v, w);
+                            if (w > 0) {
+                                auto u_rep = find_rep;
+                                auto v_rep = output_graph.find_set_rep(v);
+
+                                // u and v belong to different components
+                                if (u_rep != v_rep) {
+
+                                    // Same algorithm except we only check the
+                                    if (cheapest_node.find(u_rep) == cheapest_node.end() ||
+                                            w < std::get<2>(cheapest_node[u_rep]) ||
+                                            tie_breaking_rule(u, v, w, cheapest_node[u_rep])) {
+                                        cheapest_node[u_rep] = std::make_tuple(u, v, w);
+                                    }
+
+                                    // if (cheapest_node.find(v_rep) == cheapest_node.end() ||
+                                    //         w < std::get<2>(cheapest_node[v_rep]) ||
+                                    //         tie_breaking_rule(u, v, w, cheapest_node[v_rep])) {
+                                    //     cheapest_node[v_rep] = std::make_tuple(u, v, w);
+                                    // }
+
                                 }
-
-                                // if (cheapest_node.find(v_rep) == cheapest_node.end() ||
-                                //         w < std::get<2>(cheapest_node[v_rep]) ||
-                                //         tie_breaking_rule(u, v, w, cheapest_node[v_rep])) {
-                                //     cheapest_node[v_rep] = std::make_tuple(u, v, w);
-                                // }
-
                             }
                         }
                     }
                 }
-            }
 
-            // TODO
-            // Transmit all found edges back to the rank = 0
-            std::vector<int> send_vec;
-            for (auto x : cheapest_node) {
-                send_vec.push_back(std::get<0>(x.second));
-                send_vec.push_back(std::get<1>(x.second));
-                send_vec.push_back(std::get<2>(x.second));
-            }
-            edge_send(size, rank, send_vec);
-        }
+                if (rank != 0) {
+                    // std::cout << "Rank: " << rank<< " ";
+                    // Transmit all found edges back to the rank = 0
+                    std::vector<int> send_vec;
+                    for (auto x : cheapest_node) {
+                        send_vec.push_back(std::get<0>(x.second));
+                        send_vec.push_back(std::get<1>(x.second));
+                        send_vec.push_back(std::get<2>(x.second));
+                    }
 
-        // Find cheapest edge for all components
-        // Using each node that is a part of the
-        if (rank == 0) {
-            // Gather all of the edges
-            // Add these to the mst and perform set unions
-            auto received_edges = edge_receive(size, rank, dispatched_components);
-            // Split into 3-strides --> 0, 1, 2 -> edge(0, 1) = 2
-            for (int i = 0; i < received_edges.size() - 2; i = i + 3) {
-                output_graph.add_edge(received_edges[i], received_edges[i + 1], received_edges[i + 2]);
-                output_graph.union_set(received_edges[i], received_edges[i + 1]);
-            }
-        }
+                    edge_send(size, rank, send_vec);
+                    // MPI_Bcast(&completed, 1, MPI_CXX_BOOL, ROOT_RANK, MPI_COMM_WORLD);
 
-        MPI_Barrier(MPI_COMM_WORLD);
+                }
+                if (rank == 0) {
+                    for (auto x : cheapest_node) {
+                        output_graph.add_edge(std::get<0>(x.second), std::get<1>(x.second), std::get<2>(x.second));
+                        output_graph.union_set(std::get<0>(x.second), std::get<1>(x.second));
+                    }
+
+                    auto received_edges = edge_receive(size, rank, dispatched_components);
+
+                    // Split into 3-strides --> 0, 1, 2 -> edge(0, 1) = 2
+                    for (int i = 0; i < received_edges.size() - 1; i = i + 3) {
+                        // std::cout << "  Adding edge from " << received_edges[i] << " to " << received_edges[i + 1] << " with weight " << int(received_edges[i + 2]) << std::endl;
+                        output_graph.add_edge(received_edges[i], received_edges[i + 1], received_edges[i + 2]);
+                        output_graph.union_set(received_edges[i], received_edges[i + 1]);
+                    }
+
+                    // std::cout << "Finishing adding edges" << std::endl;
+
+                    // MPI_Bcast(&completed, 1, MPI_CXX_BOOL, ROOT_RANK, MPI_COMM_WORLD);
+                }
+            // }
+        // }
+        // if (early_exit) {
+        //     MPI_Bcast(&completed, 1, MPI_CXX_BOOL, ROOT_RANK, MPI_COMM_WORLD);
+        // }
+        // MPI_Barrier(MPI_COMM_WORLD);
     }
     return output_graph;
 }
 
 // https://github.com/nikitawani07/MST-Parallel/blob/master/src/boruvka.c
 graph_adj_list mpi_wrapper(graph_adj_list input_graph, int  argc, char** argv) {
+    std::chrono::_V2::system_clock::time_point t1, t2;
     auto err = MPI_Init(&argc, &argv);
     if (err != MPI_SUCCESS) {
         std::cout << "MPI failed somehow" << std::endl;
     }
 
-    const auto t1 = std::chrono::high_resolution_clock::now();
-    auto out = boruvka_mst_mpi(input_graph);
-    const auto t2 = std::chrono::high_resolution_clock::now();
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    std::chrono::duration<double, std::milli> ms = t2 - t1;
-    std::cout << "Serial Implementation ran for " << ms.count() << std::endl;
+
+    if (rank == 0) {
+        t1 = std::chrono::high_resolution_clock::now();
+    }
+    auto out = boruvka_mst_mpi(input_graph);
+    // std::cout << "Rank " << rank << " exited mst" << std::endl;
+
+    if (rank == 0) {
+        // std::cout << "Curr Rank " << rank << std::endl;
+        out.to_string();
+        std::chrono::duration<double, std::milli> ms = t2 - t1;
+        std::cout << "MPI Implementation ran for " << ms.count() << std::endl;
+    }
 
     MPI_Finalize();
-
     return out;
 }
 
