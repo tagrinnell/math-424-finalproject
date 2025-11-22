@@ -39,13 +39,26 @@ void mpi_test(int argc, char** argv) {
     g.add_edge(3, 8, 7);
     g.add_edge(3, 7, 3);
 
-    std::cout << "\tBASELINE" << std::endl;
-    auto test = boruvka_mst(g);
-    test.to_string();
+    std::chrono::_V2::system_clock::time_point t1, t2;
+    auto err = MPI_Init(&argc, &argv);
+    if (err != MPI_SUCCESS) {
+        std::cout << "MPI failed somehow" << std::endl;
+    }
 
-    // std::cout << "\tMPI RUN" << std::endl;
-    auto output = mpi_wrapper(g, argc, argv);
-    // output.to_string();
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    t1 = std::chrono::high_resolution_clock::now();
+    auto output = boruvka_mst(g);
+    t2 = std::chrono::system_clock::now();
+
+    output = mpi_wrapper(g, argc, argv);
+    std::chrono::duration<double, std::milli> ms = t2 - t1;
+    if (rank == 0) {
+        std::cout << "Serial Implementation ran for " << ms.count() << std::endl;
+    }
+
+    MPI_Finalize();
 }
 
 void gfg_test() {

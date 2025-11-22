@@ -522,19 +522,14 @@ graph_adj_list boruvka_mst_mpi(graph_adj_list input_graph) {
 // https://github.com/nikitawani07/MST-Parallel/blob/master/src/boruvka.c
 graph_adj_list mpi_wrapper(graph_adj_list input_graph, int  argc, char** argv) {
     std::chrono::_V2::system_clock::time_point t1, t2;
-    auto err = MPI_Init(&argc, &argv);
-    if (err != MPI_SUCCESS) {
-        std::cout << "MPI failed somehow" << std::endl;
-    }
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 
-    if (rank == 0) {
-        t1 = std::chrono::high_resolution_clock::now();
-    }
+    t1 = std::chrono::high_resolution_clock::now();
     auto out = boruvka_mst_mpi(input_graph);
+    t2 = std::chrono::high_resolution_clock::now();
     // std::cout << "Rank " << rank << " exited mst" << std::endl;
 
     if (rank == 0) {
@@ -544,7 +539,7 @@ graph_adj_list mpi_wrapper(graph_adj_list input_graph, int  argc, char** argv) {
         std::cout << "MPI Implementation ran for " << ms.count() << std::endl;
     }
 
-    MPI_Finalize();
+    // MPI_Finalize();
     return out;
 }
 
