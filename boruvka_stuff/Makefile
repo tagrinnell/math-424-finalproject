@@ -14,7 +14,7 @@ mpi_main_run:
 	mpicxx main.cpp -o main.o && mpiexec -np 3 ./main.o
 
 mpi_main:
-	mpicxx main.cpp -o main.o
+	mpicxx mpi_main.cpp -o mpi_main.o
 
 mpitest:
 	mpicxx mpi_testing.cpp -o mpi_test.o && mpiexec -n 4 ./mpi_test.o

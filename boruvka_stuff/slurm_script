@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Copy/paste this job script into a text file and submit with the command:
+#    sbatch thefilename
+# Job standard output will go to the file slurm-%j.out (where %j is the job ID)
+
+#SBATCH --partition=instruction    # Use the instruction partition
+#SBATCH --nodes=1   # Number of nodes to use
+#SBATCH --ntasks-per-node=48   # Use 8 processor cores per node
+#SBATCH --time=0-8:0:0   # Walltime limit (DD-HH:MM:SS)
+#SBATCH --qos=instruction   # Quality of service
+#SBATCH --job-name="tgrin-mst-boruvka"   # Job name to display in squeue
+
+# LOAD MODULES, INSERT CODE, AND RUN YOUR PROGRAMS HERE
+# module load intel
+tests=(
+    "1000_1500.txt"
+    "1000_25000.txt"
+    "1000_50000.txt"
+    "1000_10000.txt"
+    "10000_105000.txt"
+    "10000_35000.txt"
+    "10000_50000.txt"
+    "10000_100000.txt"
+)
+
+log_files=(
+    "1000_1500.data"
+    "1000_25000.data"
+    "1000_50000.data"
+    "1000_10000.data"
+    "10000_105000.data"
+    "10000_35000.data"
+    "10000_50000.data"
+    "10000_100000.data"
+)
+
+num_processors=(
+    2
+    4
+    8
+    16
+    32
+    48
+)
+
+# make mpi_main
+end_num=${#tests[@]}
+
+for i in {0..7}; do
+    for j in ${num_processors[@]}; do
+        for k in {0..10}; do
+            echo "mpiexec -np $j ./mpi_main.o ${tests[$i]} >> ${j}proc_${log_files[$i]}"
+        done
+    done
+done
