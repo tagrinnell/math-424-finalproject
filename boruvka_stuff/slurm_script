@@ -12,24 +12,24 @@
 #SBATCH --job-name="tgrin-mst-boruvka"   # Job name to display in squeue
 
 # LOAD MODULES, INSERT CODE, AND RUN YOUR PROGRAMS HERE
-# module load intel
+module load intel
 tests=(
-    "1000_1500.txt"
-    "1000_25000.txt"
-    "1000_50000.txt"
-    "1000_10000.txt"
-    "10000_105000.txt"
+    # "1000_1500.txt"
+    # "1000_25000.txt"
+    # "1000_50000.txt"
+    # "1000_100000.txt"
+    "10000_10500.txt"
     "10000_35000.txt"
     "10000_50000.txt"
     "10000_100000.txt"
 )
 
 log_files=(
-    "1000_1500.data"
-    "1000_25000.data"
-    "1000_50000.data"
-    "1000_10000.data"
-    "10000_105000.data"
+    # "1000_1500.data"
+    # "1000_25000.data"
+    # "1000_50000.data"
+    # "1000_100000.data"
+    "10000_10500.data"
     "10000_35000.data"
     "10000_50000.data"
     "10000_100000.data"
@@ -41,16 +41,23 @@ num_processors=(
     8
     16
     32
-    48
 )
 
-# make mpi_main
-end_num=${#tests[@]}
+# 8proc 1000_100000
+# 8proc 10000 10500
+# 4proc 10000 50000
 
-for i in {0..7}; do
-    for j in ${num_processors[@]}; do
-        for k in {0..10}; do
-            echo "mpiexec -np $j ./mpi_main.o ${tests[$i]} >> ${j}proc_${log_files[$i]}"
-        done
-    done
-done
+make mpi_main
+# end_num=${#tests[@]}
+mpiexec -np 8 ./mpi_main.o graph_inputs/10000_10500.data >> output_data/8proc_10000_10500.data
+mpiexec -np 16 ./mpi_main.o graph_inputs/10000_10500.data >> output_data/16proc_10000_10500.data
+mpiexec -np 32 ./mpi_main.o graph_inputs/10000_10500.data >> output_data/32proc_10000_10500.data
+
+# for i in {0..7}; do
+#     for j in ${num_processors[@]}; do
+#         for k in {0..10}; do
+#             # echo "mpiexec -np $j ./mpi_main.o ${tests[$i]} >> ${j}proc_${log_files[$i]}"
+#             mpiexec -np $j ./mpi_main.o ${tests[$i]} >> output_data/${j}proc_${log_files[$i]}
+#         done
+#     done
+# done

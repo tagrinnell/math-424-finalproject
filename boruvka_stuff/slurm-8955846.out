@@ -1,0 +1,139 @@
+Loading compiler version 2022.2.1
+Loading tbb version 2021.7.1
+Loading compiler-rt version 2022.2.1
+Loading oclfpga version 2022.2.1
+  Load "debugger" to debug DPC++ applications with the gdb-oneapi debugger.
+  Load "dpl" for additional DPC++ APIs: https://github.com/oneapi-src/oneDPL
+Removing compiler-rt version 2022.2.1
+Use `module list` to view any remaining dependent modules.
+Loading compiler-rt version 2022.2.1
+Loading advisor version 2022.3.1
+Loading ccl version 2021.7.1
+Loading dal version 2021.7.1
+Loading debugger version 2021.7.1
+Loading dnnl version 2022.2.1
+Loading mkl version 2022.2.1
+Loading mpi version 2021.7.1
+Removing tbb version 2021.7.1
+Use `module list` to view any remaining dependent modules.
+Loading tbb version 2021.7.1
+Loading vtune version 2022.4.1
+Loading itac version 2021.7.1
+Loading inspector version 2022.3.1
+Loading dpl version 2021.7.2
+mpicxx mpi_main.cpp -o mpi_main.o
+
+Baseline 
+Serial Implementation ran for 6505.91
+Checking for correctness... Correct!!
+MPI Implementation ran for 3751.06
+
+Baseline 
+Serial Implementation ran for 6504.71
+Checking for correctness... Correct!!
+MPI Implementation ran for 3752.93
+
+Baseline 
+Serial Implementation ran for 6493.98
+Checking for correctness... Correct!!
+MPI Implementation ran for 3751.77
+
+Baseline 
+Serial Implementation ran for 6516.72
+Checking for correctness... Correct!!
+MPI Implementation ran for 3753.26
+
+Baseline 
+Serial Implementation ran for 6525.98
+Checking for correctness... Correct!!
+MPI Implementation ran for 3758.72
+
+Baseline 
+Serial Implementation ran for 6524.96
+Checking for correctness... Correct!!
+MPI Implementation ran for 3755.14
+
+Baseline 
+Serial Implementation ran for 6514.21
+Checking for correctness... Correct!!
+MPI Implementation ran for 3751.97
+
+Baseline 
+Serial Implementation ran for 6506.33
+Checking for correctness... Correct!!
+MPI Implementation ran for 3755.97
+
+Baseline 
+Serial Implementation ran for 6522.59
+Checking for correctness... Correct!!
+MPI Implementation ran for 3759.14
+
+Baseline 
+Serial Implementation ran for 6515.6
+Checking for correctness... Correct!!
+MPI Implementation ran for 3751
+
+Baseline 
+Serial Implementation ran for 6524.51
+Checking for correctness... Correct!!
+MPI Implementation ran for 3763.17
+
+Baseline 
+Serial Implementation ran for 6468.62
+Checking for correctness... Correct!!
+MPI Implementation ran for 2489.37
+
+Baseline 
+Serial Implementation ran for 6481.07
+Checking for correctness... Correct!!
+MPI Implementation ran for 2448.4
+
+Baseline 
+Serial Implementation ran for 6465.89
+Checking for correctness... Correct!!
+MPI Implementation ran for 2475.16
+
+Baseline 
+Serial Implementation ran for 6465.32
+Checking for correctness... Correct!!
+MPI Implementation ran for 2486.42
+
+Baseline 
+Serial Implementation ran for 6461
+Checking for correctness... Correct!!
+MPI Implementation ran for 2473.76
+
+Baseline 
+Serial Implementation ran for 6466.45
+Checking for correctness... Correct!!
+MPI Implementation ran for 2480.49
+
+Baseline 
+Serial Implementation ran for 6470.5
+Checking for correctness... Correct!!
+MPI Implementation ran for 2486.66
+
+Baseline 
+Serial Implementation ran for 6468.39
+Checking for correctness... Correct!!
+MPI Implementation ran for 2489.52
+
+Baseline 
+Serial Implementation ran for 6461.29
+Checking for correctness... Correct!!
+MPI Implementation ran for 2484.07
+
+Baseline 
+Serial Implementation ran for 6464.57
+Checking for correctness... Correct!!
+MPI Implementation ran for 2475.08
+
+Baseline 
+Serial Implementation ran for 6463.04
+Checking for correctness... Correct!!
+MPI Implementation ran for 2476.07
+
+Baseline 
+Serial Implementation ran for 6495.52
+[2025-11-24T05:49:32.049] error: *** STEP 8955846.22 ON nova18-12 CANCELLED AT 2025-11-24T05:49:32 DUE TO TIME LIMIT ***
+[2025-11-24T05:49:32.049] error: *** JOB 8955846 ON nova18-12 CANCELLED AT 2025-11-24T05:49:32 DUE TO TIME LIMIT ***
