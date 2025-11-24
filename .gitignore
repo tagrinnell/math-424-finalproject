@@ -1,7 +1,6 @@
 boruvka_stuff/lib/
 boruvka_stuff/lib64/
 boruvka_stuff/bin
-boruvka_stuff/include/
 
 **.o
 **.exe

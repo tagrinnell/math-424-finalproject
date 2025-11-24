@@ -23,61 +23,66 @@ int main(int argc, char** argv) {
     };
 
     // std::cout << "Last arg " << argv[argc - 1] << std::endl;
-    std::string file = "graph_inputs/" + std::string(argv[argc - 1]);
-    auto graph_in = read_in_graph(file);
-    graph_in.to_string();
-    // mpi_test(argc, argv);
+    // std::string file = "graph_inputs/" + std::string(argv[argc - 1]);
+    // auto graph_in = read_in_graph(file);
+    // graph_in.to_string();
+    mpi_test(argc, argv);
 
     return 0;
 }
 
-// void mpi_test(int argc, char** argv) {
-//     // std::cout << "\n\nMPI TEST\n" << std::endl;
-//     graph_adj_list g(9);
+void mpi_test(int argc, char** argv) {
+    // std::cout << "\n\nMPI TEST\n" << std::endl;
+    graph_adj_list g(9);
 
-//     g.add_edge(0, 1, 17);
-//     g.add_edge(0, 2, 16);
-//     g.add_edge(0, 4, 2);
-//     g.add_edge(0, 5, 15);
-//     g.add_edge(4, 5, 3);
-//     g.add_edge(4, 1, 1);
-//     g.add_edge(5, 2, 2);
-//     g.add_edge(1, 2, 14);
-//     g.add_edge(1, 3, 14);
-//     g.add_edge(2, 3, 15);
-//     g.add_edge(2, 6, 4);
-//     g.add_edge(2, 7, 5);
-//     g.add_edge(3, 8, 7);
-//     g.add_edge(3, 7, 3);
+    g.add_edge(0, 1, 17);
+    g.add_edge(0, 2, 16);
+    g.add_edge(0, 4, 2);
+    g.add_edge(0, 5, 15);
+    g.add_edge(4, 5, 3);
+    g.add_edge(4, 1, 1);
+    g.add_edge(5, 2, 2);
+    g.add_edge(1, 2, 14);
+    g.add_edge(1, 3, 14);
+    g.add_edge(2, 3, 15);
+    g.add_edge(2, 6, 4);
+    g.add_edge(2, 7, 5);
+    g.add_edge(3, 8, 7);
+    g.add_edge(3, 7, 3);
 
-//     std::chrono::_V2::system_clock::time_point t1, t2;
-//     auto err = MPI_Init(&argc, &argv);
-//     if (err != MPI_SUCCESS) {
-//         std::cout << "MPI failed somehow" << std::endl;
-//     }
+    std::chrono::_V2::system_clock::time_point t1, t2;
+    auto err = MPI_Init(&argc, &argv);
+    if (err != MPI_SUCCESS) {
+        std::cout << "MPI failed somehow" << std::endl;
+    }
 
-//     int rank;
-//     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-//     t1 = std::chrono::high_resolution_clock::now();
-//     auto baseline = boruvka_mst(g);
-//     t2 = std::chrono::system_clock::now();
+    t1 = std::chrono::high_resolution_clock::now();
+    auto baseline = boruvka_mst(g);
+    t2 = std::chrono::system_clock::now();
 
-//     auto mpi = mpi_wrapper(g, argc, argv);
-//     std::chrono::duration<double, std::milli> ms = t2 - t1;
-//     if (rank == 0) {
-//         std::cout << "Serial Implementation ran for " << ms.count() << std::endl;
+    auto mpi = mpi_wrapper(g, argc, argv);
+    std::chrono::duration<double, std::milli> ms = t2 - t1;
+    if (rank == 0) {
+        std::cout << "Serial Implementation ran for " << ms.count() << std::endl;
 
-//         std::cout << "Asserting Correctness..." << std::flush;
-//         if (assert_correctness(baseline, mpi)) {
-//             std::cout << "Correct!" << std::endl;
-//         } else {
-//             std::cout << "Wrong :(" << std::endl;
-//         }
-//     }
+        std::cout << "Asserting Correctness..." << std::flush;
+        if (assert_correctness(baseline, mpi)) {
+            std::cout << "Correct!" << std::endl;
+        } else {
+            std::cout << "Wrong :(" << std::endl;
+        }
 
-//     MPI_Finalize();
-// }
+        std::cout << "Serial output: " << std::endl;
+        baseline.to_string();
+        std::cout << "MPI output: " << std::endl;
+        mpi.to_string();
+    }
+
+    MPI_Finalize();
+}
 
 // bool assert_correctness(graph_adj_list a, graph_adj_list b) {
 //     if (a.edge_list.size() != b.edge_list.size() && a.edge_list[0].size() != b.edge_list[0].size()) {

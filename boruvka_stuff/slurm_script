@@ -49,9 +49,10 @@ num_processors=(
 
 make mpi_main
 # end_num=${#tests[@]}
-mpiexec -np 8 ./mpi_main.o graph_inputs/10000_10500.data >> output_data/8proc_10000_10500.data
-mpiexec -np 16 ./mpi_main.o graph_inputs/10000_10500.data >> output_data/16proc_10000_10500.data
-mpiexec -np 32 ./mpi_main.o graph_inputs/10000_10500.data >> output_data/32proc_10000_10500.data
+mpiexec -np 8 ./mpi_main.o graph_inputs/1000_100000.txt >> output_data/8proc_1000_100000.data
+# mpiexec -np 8 ./mpi_main.o graph_inputs/10000_10500.data >> output_data/8proc_10000_10500.data
+# mpiexec -np 16 ./mpi_main.o graph_inputs/10000_10500.data >> output_data/16proc_10000_10500.data
+# mpiexec -np 32 ./mpi_main.o graph_inputs/10000_10500.data >> output_data/32proc_10000_10500.data
 
 # for i in {0..7}; do
 #     for j in ${num_processors[@]}; do
